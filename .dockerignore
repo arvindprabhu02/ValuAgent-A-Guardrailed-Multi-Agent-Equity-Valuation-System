@@ -1,0 +1,25 @@
+# Python build artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+ENV/
+env/
+
+# IDE files
+.vscode/
+.idea/
+.git/
+.gitignore
+
+# Local configuration / secrets
+.env
+*_valuation_memo.txt
+
+# Local diagnostics / scratch files
+diagnose_gemini.py
+test_*.py
