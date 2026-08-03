@@ -52,7 +52,7 @@ async def _run_agent_with_mocked_tools(tools_by_result: dict):
     """
     fake_tools = [_mock_tool(name, result) for name, result in tools_by_result.items()]
 
-    with patch("agents.data_retrieval_agent.McpToolset") as MockToolsetClass:
+    with patch("agents.data_retrieval_agent.MCPToolset") as MockToolsetClass:
         mock_toolset_instance = MagicMock()
         mock_toolset_instance.get_tools = AsyncMock(return_value=fake_tools)
         mock_toolset_instance.close = AsyncMock()
