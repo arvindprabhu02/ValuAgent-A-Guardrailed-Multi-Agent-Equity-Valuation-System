@@ -35,13 +35,12 @@ except ImportError:
 
 from google.adk.agents import LlmAgent
 from google.adk.agents.readonly_context import ReadonlyContext
-from google.adk.models import Gemini
-from google.genai import types as genai_types
+from google.adk.models import LiteLlm
 
 from agents.memo_prompt import build_memo_prompt
 
 
-MODEL_NAME = os.environ.get("VALUAGENT_MEMO_MODEL", "gemini-2.5-flash")
+MODEL_NAME = os.environ.get("VALUAGENT_MEMO_MODEL", "groq/llama3-8b-8192")
 
 
 def _build_instruction(ctx: ReadonlyContext) -> str:
@@ -52,14 +51,8 @@ def _build_instruction(ctx: ReadonlyContext) -> str:
     return build_memo_prompt(ctx.state)
 
 
-gemini_model = Gemini(
-    model=MODEL_NAME,
-    retry_options=genai_types.HttpRetryOptions(
-        attempts=5,
-        initialDelay=2.0,
-        maxDelay=30.0,
-        httpStatusCodes=[429, 503]
-    )
+llm_model = LiteLlm(
+    model=MODEL_NAME
 )
 
 
@@ -70,7 +63,7 @@ memo_writer_agent = LlmAgent(
         "valuation, sensitivity analysis, and critic flags. Never calculates "
         "or invents numbers -- only narrates numbers already in session state."
     ),
-    model=gemini_model,
+    model=llm_model,
     instruction=_build_instruction,
     output_key="memo_text",
 )
