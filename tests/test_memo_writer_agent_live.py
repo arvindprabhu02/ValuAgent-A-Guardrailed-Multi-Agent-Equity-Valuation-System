@@ -63,9 +63,8 @@ FAKE_SENSITIVITY_RESULT = {
 
 
 async def main():
-    if not (os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY")):
-        print("ERROR: No GOOGLE_API_KEY or GEMINI_API_KEY found in environment.")
-        print("Set one before running this test -- see the module docstring for setup steps.")
+    if not os.environ.get("GROQ_API_KEY"):
+        print("ERROR: No GROQ_API_KEY found in environment.")
         return
 
     session_service = InMemorySessionService()
