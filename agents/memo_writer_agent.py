@@ -40,7 +40,7 @@ from google.adk.models import LiteLlm
 from agents.memo_prompt import build_memo_prompt
 
 
-MODEL_NAME = os.environ.get("VALUAGENT_MEMO_MODEL", "groq/llama3-8b-8192")
+MODEL_NAME = os.environ.get("VALUAGENT_MEMO_MODEL", "groq/llama-3.1-8b-instant")
 
 
 def _build_instruction(ctx: ReadonlyContext) -> str:
