@@ -33,7 +33,7 @@ from google.genai import types
 
 
 def _has_llm_api_key() -> bool:
-    return bool(os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY"))
+    return bool(os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY") or os.environ.get("GROQ_API_KEY"))
 
 
 async def run(ticker: str):
