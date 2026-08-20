@@ -1,102 +1,62 @@
 """
-Tests for the Memo Writer Agent's instruction-building logic ONLY.
-
-This does NOT call any LLM -- it verifies that _build_instruction()
-correctly reads session state and constructs a prompt containing the
-right numbers, with no missing/garbled values. This is testable without
-a Gemini API key. The actual LLM call must be verified separately with
-test_memo_writer_agent_live.py, which DOES require a real API key and
-was NOT run during this build.
-
-_build_instruction only touches `ctx.state`, so a minimal duck-typed
-stand-in object is used instead of a real ReadonlyContext (which
-requires full ADK invocation machinery to construct).
-
-Run with: python3 test_memo_writer_instruction.py
+Tests for memo writer instruction prompt formatting under facts-only architecture.
 """
 
-from agents.memo_writer_agent import _build_instruction
+from app.agents.memo_prompt import build_memo_prompt
 
 
-class FakeReadonlyContext:
-    """Minimal stand-in exposing only the `.state` attribute _build_instruction reads."""
-    def __init__(self, state: dict):
-        self.state = state
+def test_build_memo_prompt():
+    state = {
+        "ticker": "AAPL",
+        "fundamental_analysis": {
+            "balance_sheet": {
+                "current_ratio": 1.07,
+                "debt_to_equity": 1.87,
+                "net_debt": 49200000000.0,
+                "interest_coverage": 29.1,
+                "net_debt_to_ebitda": 0.8,
+            },
+            "profitability": {
+                "revenue_growth_yoy": 2.1,
+                "gross_margin": 46.2,
+                "operating_margin": 30.7,
+                "net_margin": 23.1,
+                "rd_intensity": 7.8,
+            },
+            "cash_flow": {
+                "free_cash_flow": 110500000000.0,
+                "fcf_yield": 3.6,
+                "fcf_conversion": 1.05,
+            },
+            "per_share": {
+                "diluted_eps": 6.42,
+                "eps_growth_yoy": 9.2,
+                "fcf_per_share": 6.85,
+            },
+            "price_trend": {
+                "current_price": 198.50,
+                "return_1y_pct": 24.5,
+                "sma_signal": "BULLISH",
+            },
+            "valuation_multiples": {
+                "trailing_pe": 30.9,
+                "forward_pe": 28.1,
+            },
+        },
+        "industry_comparison": {
+            "sector": "Technology",
+            "industry": "Consumer Electronics",
+            "sector_etf_ticker": "XLK",
+            "company_1y_return_pct": 24.5,
+            "sector_etf_1y_return_pct": 18.2,
+            "outperformance_pct": 6.3,
+        },
+        "critic_flags": [],
+    }
 
-
-VALUATION_RESULT = {
-    "ticker": "TESTCO",
-    "dcf": {
-        "value_per_share": 67.15,
-        "enterprise_value": 990_000_000_000,
-        "equity_value": 973_000_000_000,
-    },
-    "ddm": {
-        "value_per_share": 14.31,
-        "next_year_dividend": 1.06,
-    },
-    "wacc": {"wacc": 0.099, "cost_of_equity": 0.11},
-    "current_market_price": 300.0,
-    "assumptions_used": {"terminal_growth_rate": 0.025},
-}
-
-CRITIC_FLAGS = [
-    {"severity": "warning", "check": "dcf_market_divergence", "message": "DCF is 78% below market price."},
-    {"severity": "warning", "check": "ddm_low_payout_ratio", "message": "DDM unreliable for low payout ratio."},
-]
-
-SENSITIVITY_RESULT = {
-    "wacc_values": [0.079, 0.089, 0.099, 0.109, 0.119],
-    "growth_values": [0.015, 0.025, 0.035],
-    "grid": [[100, 110, 125], [90, 99, 110], [80, 87, 95], [72, 78, 85], [65, 70, 76]],
-}
-
-
-def test_instruction_contains_all_key_numbers():
-    ctx = FakeReadonlyContext({
-        "valuation_result": VALUATION_RESULT,
-        "critic_flags": CRITIC_FLAGS,
-        "sensitivity_result": SENSITIVITY_RESULT,
-    })
-    instruction = _build_instruction(ctx)
-
-    assert "TESTCO" in instruction
-    assert "67.15" in instruction
-    assert "14.31" in instruction
-    assert "300.00" in instruction
-    assert "9.90%" in instruction  # WACC formatted as percentage
-    assert "dcf_market_divergence" not in instruction  # internal check names shouldn't leak, only messages
-    assert "DCF is 78% below market price." in instruction
-    assert "CRITICAL RULE" in instruction  # anti-hallucination instruction must be present
-
-    print("test_instruction_contains_all_key_numbers PASSED")
-
-
-def test_missing_valuation_produces_safe_fallback_instruction():
-    ctx = FakeReadonlyContext({})
-    instruction = _build_instruction(ctx)
-
-    assert "Unable to generate memo" in instruction
-    assert "TESTCO" not in instruction
-    print("test_missing_valuation_produces_safe_fallback_instruction PASSED")
-
-
-def test_ddm_not_applicable_case():
-    valuation_no_ddm = {**VALUATION_RESULT, "ddm": None}
-    ctx = FakeReadonlyContext({
-        "valuation_result": valuation_no_ddm,
-        "critic_flags": [{"severity": "info", "check": "ddm_not_applicable", "message": "No dividends paid."}],
-        "sensitivity_result": None,
-    })
-    instruction = _build_instruction(ctx)
-
-    assert "Not applicable" in instruction
-    assert "No dividends paid." in instruction
-    print("test_ddm_not_applicable_case PASSED")
-
-
-if __name__ == "__main__":
-    test_instruction_contains_all_key_numbers()
-    test_missing_valuation_produces_safe_fallback_instruction()
-    test_ddm_not_applicable_case()
-    print("\nAll memo instruction-builder tests passed.")
+    prompt = build_memo_prompt(state)
+    assert "AAPL" in prompt
+    assert "Technology" in prompt
+    assert "198.5" in prompt
+    assert "30.9x" in prompt
+    assert "+24.5%" in prompt

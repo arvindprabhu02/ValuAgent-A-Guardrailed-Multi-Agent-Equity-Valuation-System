@@ -18,7 +18,7 @@ from google.adk import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
 
-from agents.data_retrieval_agent import DataRetrievalAgent
+from app.agents.data_retrieval_agent import DataRetrievalAgent
 
 
 async def main():

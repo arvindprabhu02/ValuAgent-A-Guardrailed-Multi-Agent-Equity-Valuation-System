@@ -29,7 +29,7 @@ from google.adk import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai import types
 
-from agents.memo_writer_agent import memo_writer_agent
+from app.agents.memo_writer_agent import memo_writer_agent
 
 
 FAKE_VALUATION_RESULT = {

@@ -2,7 +2,7 @@
 Ensures the project root is on sys.path so tests can import top-level
 packages (agents, valuation, mcp_server) the same way they did before the
 tests/ folder existed. Without this, pytest adds only this file's own
-directory to sys.path, and imports like `from agents.critic_agent import
+directory to sys.path, and imports like `from app.agents.critic_agent import
 CriticAgent` would fail when tests are run from outside the project root.
 """
 import os

@@ -7,7 +7,7 @@ own machine before trusting the MCP server against real tickers.
 Run with: python3 test_data_fetch_live.py
 """
 
-from mcp_server import data_fetch
+from app.tools import data_fetch
 
 
 def main():

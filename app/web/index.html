@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ValuAgent — Equity Research Platform</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  
+  <style>
+    :root {
+      --bg-main: #F8FAFC;
+      --bg-card: #FFFFFF;
+      --text-main: #0F172A;
+      --text-muted: #64748B;
+      --accent-primary: #4F46E5;
+      --accent-hover: #4338CA;
+      --border-color: #E2E8F0;
+      
+      --badge-green-bg: #DCFCE7;
+      --badge-green-text: #166534;
+      --badge-yellow-bg: #FEF9C3;
+      --badge-yellow-text: #854D0E;
+      --badge-red-bg: #FEE2E2;
+      --badge-red-text: #991B1B;
+      --badge-blue-bg: #E0E7FF;
+      --badge-blue-text: #3730A3;
+      
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      line-height: 1.5;
+      padding-bottom: 60px;
+    }
+
+    h1, h2, h3, h4 {
+      font-family: 'Outfit', sans-serif;
+    }
+
+    /* Container */
+    .container {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Header */
+    header {
+      background: var(--bg-card);
+      border-bottom: 1px solid var(--border-color);
+      padding: 20px 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--accent-primary);
+      color: white;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 20px;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .logo-title {
+      font-size: 22px;
+      font-weight: 800;
+      color: var(--text-main);
+    }
+
+    .logo-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    /* Search Bar */
+    .search-wrapper {
+      position: relative;
+    }
+
+    .search-form {
+      display: flex;
+      gap: 10px;
+    }
+
+    .search-input {
+      padding: 10px 16px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 15px;
+      width: 280px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--accent-primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    }
+
+    .search-btn {
+      background: var(--accent-primary);
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .search-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    /* Autocomplete Dropdown */
+    .autocomplete-dropdown {
+      position: absolute;
+      top: calc(100% + 4px);
+      left: 0;
+      width: 380px;
+      max-height: 340px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      box-shadow: var(--shadow-md);
+      overflow-y: auto;
+      z-index: 100;
+      display: none;
+    }
+
+    .autocomplete-item {
+      padding: 10px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      border-bottom: 1px solid #F1F5F9;
+      transition: background 0.15s;
+    }
+
+    .autocomplete-item:last-child {
+      border-bottom: none;
+    }
+
+    .autocomplete-item:hover, .autocomplete-item.selected {
+      background: #F8FAFC;
+    }
+
+    .ac-info {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .ac-name {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .ac-sector {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .ac-ticker-badge {
+      background: #EEF2FF;
+      color: var(--accent-primary);
+      font-weight: 700;
+      font-size: 12px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      border: 1px solid #E0E7FF;
+    }
+
+    .ac-highlight {
+      color: var(--accent-primary);
+      font-weight: 700;
+    }
+
+    .ac-empty {
+      padding: 16px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    /* Chips */
+    .chips {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-top: 12px;
+    }
+
+    .chip-label {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .chip {
+      background: #F1F5F9;
+      border: 1px solid var(--border-color);
+      padding: 4px 10px;
+      border-radius: 16px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--text-main);
+    }
+
+    .chip:hover {
+      background: #E2E8F0;
+    }
+
+    /* Pipeline Stepper */
+    .stepper-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px 24px;
+      margin: 24px 0;
+      box-shadow: var(--shadow-sm);
+      display: none;
+    }
+
+    .stepper-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stepper-steps {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+    }
+
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      position: relative;
+      z-index: 2;
+      flex: 1;
+    }
+
+    .step-circle {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: #E2E8F0;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .step.active .step-circle {
+      background: var(--accent-primary);
+      color: white;
+    }
+
+    .step.completed .step-circle {
+      background: #10B981;
+      color: white;
+    }
+
+    .step-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .step.active .step-label,
+    .step.completed .step-label {
+      color: var(--text-main);
+    }
+
+    /* Profile Banner */
+    .profile-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .company-title-group {
+      display: flex;
+      align-items: baseline;
+      gap: 12px;
+    }
+
+    .company-name {
+      font-size: 26px;
+      font-weight: 800;
+    }
+
+    .ticker-badge {
+      background: #F1F5F9;
+      color: var(--text-muted);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-weight: 700;
+      font-size: 14px;
+    }
+
+    .meta-pills {
+      display: flex;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .pill {
+      background: var(--badge-blue-bg);
+      color: var(--badge-blue-text);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 12px;
+    }
+
+    .price-box {
+      text-align: right;
+    }
+
+    .current-price {
+      font-size: 32px;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .price-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    /* Executive Summary Top View */
+    .exec-summary-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 24px;
+      margin-bottom: 32px;
+    }
+
+    .memo-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 28px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .memo-content {
+      font-size: 14px;
+      color: #334155;
+      line-height: 1.7;
+    }
+
+    .memo-content h1, .memo-content h2, .memo-content h3, .memo-content h4 {
+      color: var(--text-main);
+      font-family: 'Outfit', sans-serif;
+      font-weight: 700;
+      margin-top: 18px;
+      margin-bottom: 8px;
+    }
+
+    .memo-content h3 {
+      font-size: 15px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 4px;
+    }
+
+    .memo-content p {
+      margin-bottom: 12px;
+    }
+
+    .memo-content strong, .memo-content b {
+      font-weight: 700;
+      color: #0F172A;
+    }
+
+    .memo-content ul, .memo-content ol {
+      margin-left: 20px;
+      margin-bottom: 12px;
+    }
+
+    .memo-content li {
+      margin-bottom: 4px;
+    }
+
+    .highlights-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .alert-banner {
+      background: #FFFBEB;
+      border: 1px solid #FCD34D;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 24px;
+    }
+
+    .alert-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: #92400E;
+      margin-bottom: 6px;
+    }
+
+    .alert-item {
+      font-size: 13px;
+      color: #B45309;
+      margin-bottom: 4px;
+    }
+
+    /* Tabs Navigation */
+    .tabs-wrapper {
+      margin-top: 16px;
+    }
+
+    .tabs-header {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      color: var(--text-main);
+    }
+
+    .tabs-bar {
+      display: flex;
+      gap: 8px;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 2px;
+      overflow-x: auto;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      border-bottom: 3px solid transparent;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover {
+      color: var(--accent-primary);
+    }
+
+    .tab-btn.active {
+      color: var(--accent-primary);
+      border-bottom-color: var(--accent-primary);
+      font-weight: 700;
+    }
+
+    .tab-pane {
+      display: none;
+      padding-top: 24px;
+    }
+
+    .tab-pane.active {
+      display: block;
+    }
+
+    /* Metric Cards Grid */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 16px;
+    }
+
+    .metric-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 16px 20px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .metric-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+    }
+
+    .metric-value {
+      font-size: 22px;
+      font-weight: 800;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      margin-top: 6px;
+    }
+
+    .badge-green { background: var(--badge-green-bg); color: var(--badge-green-text); }
+    .badge-yellow { background: var(--badge-yellow-bg); color: var(--badge-yellow-text); }
+    .badge-red { background: var(--badge-red-bg); color: var(--badge-red-text); }
+
+    /* Hidden Utility */
+    .hidden { display: none !important; }
+    .chart-btn {
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      background: #fff;
+      cursor: pointer;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-muted);
+      transition: all 0.2s;
+    }
+    .chart-btn:hover {
+      background: #f1f5f9;
+    }
+    .chart-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+  </style>
+  <script src="https://cdn.plot.ly/plotly-2.32.0.min.js"></script>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <div class="container header-content">
+      <div class="logo-group">
+        <div class="logo-icon">V</div>
+        <div>
+          <div class="logo-title">ValuAgent</div>
+          <div class="logo-subtitle">Facts-Only Equity Research</div>
+        </div>
+      </div>
+      <div class="search-wrapper">
+        <form class="search-form" id="searchForm" autocomplete="off">
+          <input type="text" id="tickerInput" class="search-input" placeholder="Search Ticker or Company Name..." required>
+          <button type="submit" class="search-btn">Analyze Ticker</button>
+        </form>
+        <div class="autocomplete-dropdown" id="autocompleteDropdown"></div>
+        <div class="chips">
+          <span class="chip-label">Popular:</span>
+          <span class="chip" onclick="quickSearch('AAPL')">AAPL</span>
+          <span class="chip" onclick="quickSearch('MSFT')">MSFT</span>
+          <span class="chip" onclick="quickSearch('TSLA')">TSLA</span>
+          <span class="chip" onclick="quickSearch('JNJ')">JNJ</span>
+          <span class="chip" onclick="quickSearch('NVDA')">NVDA</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container">
+       <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="hidden" style="text-align: center; margin: 3rem 0; padding: 2rem; background: #fff; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow);">
+       <h3 id="loadingText" style="color: var(--primary); font-size: 1.25rem; font-weight: 600; margin: 0;">Running AI Analysis...</h3>
+       <p style="color: var(--text-muted); margin-top: 0.5rem; font-size: 0.95rem;">Please wait while the AI agents research and evaluate the stock.</p>
+    </div>
+
+    <!-- Main Results Container -->
+    <div id="resultsContainer" class="hidden">
+      
+      <!-- Company Profile Banner -->
+      <div class="profile-card">
+        <div>
+          <div class="company-title-group">
+            <div class="company-name" id="compName">-</div>
+            <div class="ticker-badge" id="compTicker">-</div>
+          </div>
+          <div class="meta-pills">
+            <span class="pill" id="compSector">-</span>
+            <span class="pill" id="compIndustry">-</span>
+            <span class="pill" id="compExchange">-</span>
+          </div>
+        </div>
+        <div class="price-box">
+          <div class="current-price" id="compPrice">$0.00</div>
+          <div class="price-label">Current Market Price</div>
+        </div>
+      </div>
+
+      <!-- Price Chart Card -->
+      <div class="card" style="margin-bottom: 2rem; padding: 1.5rem; background: #fff; border-radius: 12px; border: 1px solid var(--border); box-shadow: var(--shadow);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <div class="card-title" style="margin: 0; font-size: 1.125rem; font-weight: 600; color: var(--text-dark);">Stock Price History</div>
+          <div class="chart-controls" style="display: flex; gap: 0.5rem;">
+            <button class="chart-btn active" id="btn-chart-30D" onclick="updateChart('30D')">30D</button>
+            <button class="chart-btn" id="btn-chart-1Y" onclick="updateChart('1Y')">1Y</button>
+            <button class="chart-btn" id="btn-chart-5Y" onclick="updateChart('5Y')">5Y</button>
+          </div>
+        </div>
+        <div id="priceChart" style="width: 100%; height: 400px;"></div>
+      </div>
+
+      <!-- Executive Summary Top View -->
+      <div class="exec-summary-grid">
+        <div class="memo-card">
+          <div class="card-title">📝 Executive Research Memorandum</div>
+          <div class="memo-content" id="memoText">Loading research memo...</div>
+        </div>
+        
+        <div class="highlights-card">
+          <div class="card-title">⚡ Highlights Snapshot</div>
+          <div id="highlightsList"></div>
+        </div>
+      </div>
+
+      <!-- Interactive Metric Group Tabs -->
+      <div class="tabs-wrapper">
+        <div class="tabs-header">Explore Detailed Metric Groups</div>
+        <div class="tabs-bar">
+          <button class="tab-btn active" onclick="switchTab('tabPrice')">Price & Technicals</button>
+          <button class="tab-btn" onclick="switchTab('tabBalance')">Balance Sheet & Debt</button>
+          <button class="tab-btn" onclick="switchTab('tabProfit')">Profitability & Per-Share</button>
+          <button class="tab-btn" onclick="switchTab('tabCash')">Cash Flow & Capital Allocation</button>
+          <button class="tab-btn" onclick="switchTab('tabValuation')">Valuation Multiples & Moat</button>
+          <button class="tab-btn" onclick="switchTab('tabIndustry')">Industry & Governance</button>
+        </div>
+
+        <!-- Tab 1: Price & Technicals -->
+        <div class="tab-pane active" id="tabPrice">
+          <div class="cards-grid" id="gridPrice"></div>
+        </div>
+
+        <!-- Tab 2: Balance Sheet -->
+        <div class="tab-pane" id="tabBalance">
+          <div class="cards-grid" id="gridBalance"></div>
+        </div>
+
+        <!-- Tab 3: Profitability & Per-Share -->
+        <div class="tab-pane" id="tabProfit">
+          <div class="cards-grid" id="gridProfit"></div>
+        </div>
+
+        <!-- Tab 4: Cash Flow -->
+        <div class="tab-pane" id="tabCash">
+          <div class="cards-grid" id="gridCash"></div>
+        </div>
+
+        <!-- Tab 5: Valuation Multiples & Moat -->
+        <div class="tab-pane" id="tabValuation">
+          <div class="cards-grid" id="gridValuation"></div>
+        </div>
+
+        <!-- Tab 6: Industry & Governance -->
+        <div class="tab-pane" id="tabIndustry">
+          <div class="cards-grid" id="gridIndustry"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    // Comprehensive list of leading US and global stocks with tickers, names, and sectors
+    const STOCK_UNIVERSE = [
+      { ticker: 'AAPL', name: 'Apple Inc.', sector: 'Technology' },
+      { ticker: 'ABBV', name: 'AbbVie Inc.', sector: 'Healthcare' },
+      { ticker: 'ABT', name: 'Abbott Laboratories', sector: 'Healthcare' },
+      { ticker: 'ACN', name: 'Accenture plc', sector: 'Technology' },
+      { ticker: 'ADBE', name: 'Adobe Inc.', sector: 'Technology' },
+      { ticker: 'AMD', name: 'Advanced Micro Devices, Inc.', sector: 'Technology' },
+      { ticker: 'AMGN', name: 'Amgen Inc.', sector: 'Healthcare' },
+      { ticker: 'AMZN', name: 'Amazon.com, Inc.', sector: 'Consumer Cyclical' },
+      { ticker: 'AVGO', name: 'Broadcom Inc.', sector: 'Technology' },
+      { ticker: 'AXP', name: 'American Express Company', sector: 'Financial Services' },
+      { ticker: 'BA', name: 'The Boeing Company', sector: 'Industrials' },
+      { ticker: 'BAC', name: 'Bank of America Corporation', sector: 'Financial Services' },
+      { ticker: 'BABA', name: 'Alibaba Group Holding Limited', sector: 'Consumer Cyclical' },
+      { ticker: 'BKNG', name: 'Booking Holdings Inc.', sector: 'Consumer Cyclical' },
+      { ticker: 'BLK', name: 'BlackRock, Inc.', sector: 'Financial Services' },
+      { ticker: 'BMY', name: 'Bristol-Myers Squibb Company', sector: 'Healthcare' },
+      { ticker: 'C', name: 'Citigroup Inc.', sector: 'Financial Services' },
+      { ticker: 'CAT', name: 'Caterpillar Inc.', sector: 'Industrials' },
+      { ticker: 'CMCSA', name: 'Comcast Corporation', sector: 'Communication Services' },
+      { ticker: 'COP', name: 'ConocoPhillips', sector: 'Energy' },
+      { ticker: 'COST', name: 'Costco Wholesale Corporation', sector: 'Consumer Defensive' },
+      { ticker: 'CRM', name: 'Salesforce, Inc.', sector: 'Technology' },
+      { ticker: 'CSCO', name: 'Cisco Systems, Inc.', sector: 'Technology' },
+      { ticker: 'CVX', name: 'Chevron Corporation', sector: 'Energy' },
+      { ticker: 'DE', name: 'Deere & Company', sector: 'Industrials' },
+      { ticker: 'DHR', name: 'Danaher Corporation', sector: 'Healthcare' },
+      { ticker: 'DIS', name: 'The Walt Disney Company', sector: 'Communication Services' },
+      { ticker: 'ELV', name: 'Elevance Health, Inc.', sector: 'Healthcare' },
+      { ticker: 'GE', name: 'GE Aerospace', sector: 'Industrials' },
+      { ticker: 'GOOG', name: 'Alphabet Inc. (Class C)', sector: 'Communication Services' },
+      { ticker: 'GOOGL', name: 'Alphabet Inc. (Class A)', sector: 'Communication Services' },
+      { ticker: 'GS', name: 'The Goldman Sachs Group, Inc.', sector: 'Financial Services' },
+      { ticker: 'HD', name: 'The Home Depot, Inc.', sector: 'Consumer Cyclical' },
+      { ticker: 'HON', name: 'Honeywell International Inc.', sector: 'Industrials' },
+      { ticker: 'IBM', name: 'International Business Machines Corporation', sector: 'Technology' },
+      { ticker: 'INTC', name: 'Intel Corporation', sector: 'Technology' },
+      { ticker: 'INTU', name: 'Intuit Inc.', sector: 'Technology' },
+      { ticker: 'ISRG', name: 'Intuitive Surgical, Inc.', sector: 'Healthcare' },
+      { ticker: 'JNJ', name: 'Johnson & Johnson', sector: 'Healthcare' },
+      { ticker: 'JPM', name: 'JPMorgan Chase & Co.', sector: 'Financial Services' },
+      { ticker: 'KO', name: 'The Coca-Cola Company', sector: 'Consumer Defensive' },
+      { ticker: 'LIN', name: 'Linde plc', sector: 'Basic Materials' },
+      { ticker: 'LLY', name: 'Eli Lilly and Company', sector: 'Healthcare' },
+      { ticker: 'LMT', name: 'Lockheed Martin Corporation', sector: 'Industrials' },
+      { ticker: 'LOW', name: 'Lowe\'s Companies, Inc.', sector: 'Consumer Cyclical' },
+      { ticker: 'MA', name: 'Mastercard Incorporated', sector: 'Financial Services' },
+      { ticker: 'MCD', name: 'McDonald\'s Corporation', sector: 'Consumer Cyclical' },
+      { ticker: 'MDLZ', name: 'Mondelez International, Inc.', sector: 'Consumer Defensive' },
+      { ticker: 'MDT', name: 'Medtronic plc', sector: 'Healthcare' },
+      { ticker: 'META', name: 'Meta Platforms, Inc.', sector: 'Communication Services' },
+      { ticker: 'MMM', name: '3M Company', sector: 'Industrials' },
+      { ticker: 'MO', name: 'Altria Group, Inc.', sector: 'Consumer Defensive' },
+      { ticker: 'MRK', name: 'Merck & Co., Inc.', sector: 'Healthcare' },
+      { ticker: 'MS', name: 'Morgan Stanley', sector: 'Financial Services' },
+      { ticker: 'MSFT', name: 'Microsoft Corporation', sector: 'Technology' },
+      { ticker: 'NEE', name: 'NextEra Energy, Inc.', sector: 'Utilities' },
+      { ticker: 'NFLX', name: 'Netflix, Inc.', sector: 'Communication Services' },
+      { ticker: 'NKE', name: 'NIKE, Inc.', sector: 'Consumer Cyclical' },
+      { ticker: 'NVDA', name: 'NVIDIA Corporation', sector: 'Technology' },
+      { ticker: 'ORCL', name: 'Oracle Corporation', sector: 'Technology' },
+      { ticker: 'PEP', name: 'PepsiCo, Inc.', sector: 'Consumer Defensive' },
+      { ticker: 'PFE', name: 'Pfizer Inc.', sector: 'Healthcare' },
+      { ticker: 'PG', name: 'The Procter & Gamble Company', sector: 'Consumer Defensive' },
+      { ticker: 'PLTR', name: 'Palantir Technologies Inc.', sector: 'Technology' },
+      { ticker: 'PM', name: 'Philip Morris International Inc.', sector: 'Consumer Defensive' },
+      { ticker: 'PYPL', name: 'PayPal Holdings, Inc.', sector: 'Financial Services' },
+      { ticker: 'QCOM', name: 'QUALCOMM Incorporated', sector: 'Technology' },
+      { ticker: 'RTX', name: 'RTX Corporation', sector: 'Industrials' },
+      { ticker: 'SBUX', name: 'Starbucks Corporation', sector: 'Consumer Cyclical' },
+      { ticker: 'SCHW', name: 'The Charles Schwab Corporation', sector: 'Financial Services' },
+      { ticker: 'SNOW', name: 'Snowflake Inc.', sector: 'Technology' },
+      { ticker: 'SO', name: 'The Southern Company', sector: 'Utilities' },
+      { ticker: 'SPGI', name: 'S&P Global Inc.', sector: 'Financial Services' },
+      { ticker: 'T', name: 'AT&T Inc.', sector: 'Communication Services' },
+      { ticker: 'TGT', name: 'Target Corporation', sector: 'Consumer Defensive' },
+      { ticker: 'TJX', name: 'The TJX Companies, Inc.', sector: 'Consumer Cyclical' },
+      { ticker: 'TMUS', name: 'T-Mobile US, Inc.', sector: 'Communication Services' },
+      { ticker: 'TSLA', name: 'Tesla, Inc.', sector: 'Consumer Cyclical' },
+      { ticker: 'TXN', name: 'Texas Instruments Incorporated', sector: 'Technology' },
+      { ticker: 'UNH', name: 'UnitedHealth Group Incorporated', sector: 'Healthcare' },
+      { ticker: 'UNP', name: 'Union Pacific Corporation', sector: 'Industrials' },
+      { ticker: 'UPS', name: 'United Parcel Service, Inc.', sector: 'Industrials' },
+      { ticker: 'USB', name: 'U.S. Bancorp', sector: 'Financial Services' },
+      { ticker: 'V', name: 'Visa Inc.', sector: 'Financial Services' },
+      { ticker: 'VZ', name: 'Verizon Communications Inc.', sector: 'Communication Services' },
+      { ticker: 'WFC', name: 'Wells Fargo & Company', sector: 'Financial Services' },
+      { ticker: 'WM', name: 'Waste Management, Inc.', sector: 'Industrials' },
+      { ticker: 'WMT', name: 'Walmart Inc.', sector: 'Consumer Defensive' },
+      { ticker: 'XOM', name: 'Exxon Mobil Corporation', sector: 'Energy' }
+    ];
+
+    const tickerInput = document.getElementById('tickerInput');
+    const dropdown = document.getElementById('autocompleteDropdown');
+    let selectedIndex = -1;
+
+    // Filter stocks matching query by ticker or company name
+    function filterStocks(query) {
+      const q = query.trim().toLowerCase();
+      if (!q) return [];
+
+      return STOCK_UNIVERSE.filter(item => {
+        const tickerMatch = item.ticker.toLowerCase().includes(q);
+        const nameMatch = item.name.toLowerCase().includes(q);
+        return tickerMatch || nameMatch;
+      }).sort((a, b) => {
+        // Prioritize exact prefix match on ticker, then exact prefix on name
+        const aTickStart = a.ticker.toLowerCase().startsWith(q);
+        const bTickStart = b.ticker.toLowerCase().startsWith(q);
+        if (aTickStart && !bTickStart) return -1;
+        if (!aTickStart && bTickStart) return 1;
+
+        const aNameStart = a.name.toLowerCase().startsWith(q);
+        const bNameStart = b.name.toLowerCase().startsWith(q);
+        if (aNameStart && !bNameStart) return -1;
+        if (!aNameStart && bNameStart) return 1;
+
+        return a.name.localeCompare(b.name);
+      }).slice(0, 10);
+    }
+
+    function highlightMatch(text, query) {
+      const q = query.trim();
+      if (!q) return text;
+      const regex = new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+      return text.replace(regex, '<span class="ac-highlight">$1</span>');
+    }
+
+    function renderDropdown(matches, query) {
+      if (!matches || matches.length === 0) {
+        dropdown.innerHTML = `<div class="ac-empty">No matching companies found. Press Enter to analyze "${query}".</div>`;
+        dropdown.style.display = 'block';
+        selectedIndex = -1;
+        return;
+      }
+
+      dropdown.innerHTML = matches.map((item, idx) => `
+        <div class="autocomplete-item ${idx === selectedIndex ? 'selected' : ''}" data-ticker="${item.ticker}" onmousedown="selectStock('${item.ticker}')">
+          <div class="ac-info">
+            <div class="ac-name">${highlightMatch(item.name, query)}</div>
+            <div class="ac-sector">${item.sector}</div>
+          </div>
+          <div class="ac-ticker-badge">${highlightMatch(item.ticker, query)}</div>
+        </div>
+      `).join('');
+
+      dropdown.style.display = 'block';
+    }
+
+    function selectStock(ticker) {
+      tickerInput.value = ticker;
+      dropdown.style.display = 'none';
+      selectedIndex = -1;
+      runAnalysis(ticker);
+    }
+
+    tickerInput.addEventListener('input', (e) => {
+      const val = e.target.value;
+      selectedIndex = -1;
+      if (val.trim().length > 0) {
+        const matches = filterStocks(val);
+        renderDropdown(matches, val);
+      } else {
+        dropdown.style.display = 'none';
+      }
+    });
+
+    tickerInput.addEventListener('focus', (e) => {
+      const val = e.target.value;
+      if (val.trim().length > 0) {
+        const matches = filterStocks(val);
+        renderDropdown(matches, val);
+      }
+    });
+
+    tickerInput.addEventListener('keydown', (e) => {
+      const items = dropdown.querySelectorAll('.autocomplete-item');
+      if (dropdown.style.display === 'block' && items.length > 0) {
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          selectedIndex = (selectedIndex + 1) % items.length;
+          updateSelected(items);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          selectedIndex = (selectedIndex - 1 + items.length) % items.length;
+          updateSelected(items);
+        } else if (e.key === 'Enter') {
+          if (selectedIndex >= 0 && selectedIndex < items.length) {
+            e.preventDefault();
+            const ticker = items[selectedIndex].getAttribute('data-ticker');
+            selectStock(ticker);
+            return;
+          }
+        } else if (e.key === 'Escape') {
+          dropdown.style.display = 'none';
+          selectedIndex = -1;
+        }
+      }
+    });
+
+    function updateSelected(items) {
+      items.forEach((it, idx) => {
+        if (idx === selectedIndex) {
+          it.classList.add('selected');
+          it.scrollIntoView({ block: 'nearest' });
+          tickerInput.value = it.getAttribute('data-ticker');
+        } else {
+          it.classList.remove('selected');
+        }
+      });
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.search-wrapper')) {
+        dropdown.style.display = 'none';
+        selectedIndex = -1;
+      }
+    });
+
+    function quickSearch(t) {
+      document.getElementById('tickerInput').value = t;
+      dropdown.style.display = 'none';
+      runAnalysis(t);
+    }
+
+    document.getElementById('searchForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      dropdown.style.display = 'none';
+      const raw = document.getElementById('tickerInput').value.trim();
+      if (!raw) return;
+
+      // Check if user entered an exact company name from database
+      const matched = STOCK_UNIVERSE.find(s => s.name.toLowerCase() === raw.toLowerCase());
+      const t = matched ? matched.ticker : raw.toUpperCase();
+      runAnalysis(t);
+    });
+
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
+      
+      event.target.classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+    }
+
+    let ohlcData = null;
+
+    function runAnalysis(ticker) {
+      document.getElementById('loadingIndicator').classList.remove('hidden');
+      document.getElementById('resultsContainer').classList.add('hidden');
+      document.getElementById('loadingText').innerText = `Analyzing ${ticker}...`;
+
+      const evtSource = new EventSource(`/api/value_stream?ticker=${ticker}`);
+      
+      evtSource.onmessage = function(event) {
+        try {
+          const data = JSON.parse(event.data);
+          
+          if (data.type === 'progress') {
+             const names = {
+                "data_retrieval_agent": "Fetching financial data...",
+                "fundamental_analysis_agent": "Performing fundamental analysis...",
+                "industry_comparison_agent": "Running industry comparison...",
+                "critic_agent": "Checking risk guardrails...",
+                "memo_writer_agent": "Writing executive memo..."
+             };
+             if (names[data.author]) {
+                 document.getElementById('loadingText').innerText = names[data.author];
+             }
+          } else if (data.type === 'error') {
+             alert('Error: ' + data.error);
+             document.getElementById('loadingIndicator').classList.add('hidden');
+             evtSource.close();
+          } else if (data.type === 'result') {
+             if (!data.success) {
+               alert('Error: ' + data.error);
+             } else {
+               ohlcData = data.ohlc_data;
+               renderDashboard(data);
+               updateChart('30D');
+               document.getElementById('resultsContainer').classList.remove('hidden');
+             }
+             document.getElementById('loadingIndicator').classList.add('hidden');
+             evtSource.close();
+          }
+        } catch (e) {
+          console.error("Error parsing SSE data", e);
+        }
+      };
+
+      evtSource.onerror = function(err) {
+        console.error("SSE Error:", err);
+        document.getElementById('loadingIndicator').classList.add('hidden');
+        evtSource.close();
+      };
+    }
+
+    function updateChart(period) {
+      if (!ohlcData || !ohlcData.dates || ohlcData.dates.length === 0) return;
+      
+      document.querySelectorAll('.chart-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`btn-chart-${period}`).classList.add('active');
+      
+      let days = ohlcData.dates.length;
+      if (period === '30D') days = 21; // ~21 trading days in a month
+      else if (period === '1Y') days = 252; // ~252 trading days in a year
+      
+      const sliceIdx = Math.max(0, ohlcData.dates.length - days);
+      
+      const trace = {
+        x: ohlcData.dates.slice(sliceIdx),
+        open: ohlcData.opens.slice(sliceIdx),
+        high: ohlcData.highs.slice(sliceIdx),
+        low: ohlcData.lows.slice(sliceIdx),
+        close: ohlcData.closes.slice(sliceIdx),
+        type: 'candlestick',
+        xaxis: 'x',
+        yaxis: 'y'
+      };
+      
+      const layout = {
+        margin: { t: 10, b: 30, l: 40, r: 20 },
+        xaxis: { rangeslider: { visible: false } },
+        yaxis: { fixedrange: false },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        showlegend: false
+      };
+      
+      Plotly.newPlot('priceChart', [trace], layout, {responsive: true});
+    }
+
+    function renderDashboard(data) {
+      const p = data.company_profile || {};
+      const fa = data.fundamental_analysis || {};
+      const ind = data.industry_comparison || {};
+      const flags = data.critic_flags || [];
+
+      const bs = fa.balance_sheet || {};
+      const prof = fa.profitability || {};
+      const cf = fa.cash_flow || {};
+      const ps = fa.per_share || {};
+      const pt = fa.price_trend || {};
+      const vm = fa.valuation_multiples || {};
+      const moat = fa.moat || {};
+      const gov = fa.governance || {};
+
+      // Profile
+      document.getElementById('compName').innerText = p.long_name || data.ticker;
+      document.getElementById('compTicker').innerText = data.ticker;
+      document.getElementById('compSector').innerText = p.sector || 'N/A';
+      document.getElementById('compIndustry').innerText = p.industry || 'N/A';
+      document.getElementById('compExchange').innerText = p.exchange || 'USD';
+      document.getElementById('compPrice').innerText = '$' + (pt.current_price || p.current_price || 0).toFixed(2);
+
+      // Memo
+      const memoEl = document.getElementById('memoText');
+      if (data.memo_text) {
+        if (typeof marked !== 'undefined' && marked.parse) {
+          memoEl.innerHTML = marked.parse(data.memo_text);
+        } else {
+          memoEl.innerText = data.memo_text;
+        }
+      } else {
+        memoEl.innerHTML = '<p style="color: var(--text-muted);">No research memo generated.</p>';
+      }
+
+      // Highlights Snapshot
+      const hl = document.getElementById('highlightsList');
+      hl.innerHTML = `
+        <div class="metric-card"><div class="metric-label">P/E Ratio</div><div class="metric-value">${vm.trailing_pe ? vm.trailing_pe.toFixed(1) : (vm.forward_pe ? vm.forward_pe.toFixed(1) : 'N/A')}</div></div>
+        <div class="metric-card"><div class="metric-label">ROIC</div><div class="metric-value">${moat.roic ? moat.roic.toFixed(1) + '%' : 'N/A'}</div></div>
+        <div class="metric-card"><div class="metric-label">ROCE</div><div class="metric-value">${moat.roce ? moat.roce.toFixed(1) + '%' : 'N/A'}</div></div>
+        <div class="metric-card"><div class="metric-label">Avg M. Return (1Y)</div><div class="metric-value">${pt.avg_monthly_return_1y_pct !== undefined && pt.avg_monthly_return_1y_pct !== null ? pt.avg_monthly_return_1y_pct.toFixed(2) + '%' : 'N/A'}</div></div>
+        <div class="metric-card"><div class="metric-label">Avg M. Return (5Y)</div><div class="metric-value">${pt.avg_monthly_return_5y_pct !== undefined && pt.avg_monthly_return_5y_pct !== null ? pt.avg_monthly_return_5y_pct.toFixed(2) + '%' : 'N/A'}</div></div>
+        <div class="metric-card"><div class="metric-label">FCF Yield</div><div class="metric-value">${cf.fcf_yield ? cf.fcf_yield.toFixed(2) + '%' : 'N/A'}</div></div>
+      `;
+
+      // Helper to render metric box
+      function c(label, val, badge=null) {
+        return `
+          <div class="metric-card">
+            <div class="metric-label">${label}</div>
+            <div class="metric-value">${val !== null && val !== undefined ? val : 'N/A'}</div>
+            ${badge ? `<div class="badge ${badge.cls}">${badge.txt}</div>` : ''}
+          </div>
+        `;
+      }
+
+      // Tab 1: Price & Technicals
+      document.getElementById('gridPrice').innerHTML = `
+        ${c('3-Month Return', pt.return_3m_pct ? pt.return_3m_pct.toFixed(1) + '%' : 'N/A')}
+        ${c('1-Year Return', pt.return_1y_pct ? pt.return_1y_pct.toFixed(1) + '%' : 'N/A')}
+        ${c('52-W High', '$' + (pt.high_52w || 0).toFixed(2))}
+        ${c('52-W Low', '$' + (pt.low_52w || 0).toFixed(2))}
+        ${c('SMA Signal', pt.sma_signal || 'N/A', pt.sma_signal === 'BULLISH' ? {cls:'badge-green', txt:'Bullish'} : {cls:'badge-red', txt:'Bearish'})}
+        ${c('RSI (14-Day)', pt.rsi_14 ? pt.rsi_14.toFixed(1) : 'N/A')}
+        ${c('Beta', pt.beta ? pt.beta.toFixed(2) : 'N/A')}
+      `;
+
+      // Tab 2: Balance Sheet
+      document.getElementById('gridBalance').innerHTML = `
+        ${c('Current Ratio', bs.current_ratio ? bs.current_ratio.toFixed(2) : 'N/A', bs.current_ratio >= 1.5 ? {cls:'badge-green', txt:'Healthy'} : {cls:'badge-yellow', txt:'Caution'})}
+        ${c('Quick Ratio', bs.quick_ratio ? bs.quick_ratio.toFixed(2) : 'N/A')}
+        ${c('Debt-to-Equity', bs.debt_to_equity ? bs.debt_to_equity.toFixed(2) : 'N/A')}
+        ${c('Net Debt / EBITDA', bs.net_debt_to_ebitda ? bs.net_debt_to_ebitda.toFixed(1) + 'x' : 'N/A')}
+        ${c('Interest Coverage', bs.interest_coverage ? bs.interest_coverage.toFixed(1) + 'x' : 'N/A')}
+        ${c('Short-Term Debt (<1Y)', '$' + (bs.debt_due_1y ? (bs.debt_due_1y/1e9).toFixed(2) + 'B' : '0.00B'))}
+        ${c('Long-Term Debt (>1Y)', '$' + (bs.debt_due_2y_5y ? (bs.debt_due_2y_5y/1e9).toFixed(2) + 'B' : '0.00B'))}
+      `;
+
+      // Tab 3: Profitability & Per-Share
+      document.getElementById('gridProfit').innerHTML = `
+        ${c('Revenue Growth', prof.revenue_growth_yoy ? prof.revenue_growth_yoy.toFixed(1) + '%' : 'N/A')}
+        ${c('Gross Margin', prof.gross_margin ? prof.gross_margin.toFixed(1) + '%' : 'N/A')}
+        ${c('Operating Margin', prof.operating_margin ? prof.operating_margin.toFixed(1) + '%' : 'N/A')}
+        ${c('Net Margin', prof.net_margin ? prof.net_margin.toFixed(1) + '%' : 'N/A')}
+        ${c('Diluted EPS', ps.diluted_eps ? '$' + ps.diluted_eps.toFixed(2) : 'N/A')}
+        ${c('EPS Growth', ps.eps_growth_yoy ? ps.eps_growth_yoy.toFixed(1) + '%' : 'N/A')}
+        ${c('FCF / Share', ps.fcf_per_share ? '$' + ps.fcf_per_share.toFixed(2) : 'N/A')}
+        ${c('Revenue / Share', ps.revenue_per_share ? '$' + ps.revenue_per_share.toFixed(2) : 'N/A')}
+        ${c('Book Value / Share', ps.book_value_per_share ? '$' + ps.book_value_per_share.toFixed(2) : 'N/A')}
+        ${c('Buyback Yield', ps.buyback_yield ? ps.buyback_yield.toFixed(2) + '%' : 'N/A')}
+        ${c('Dilution % (SBC)', ps.dilution_pct ? ps.dilution_pct.toFixed(2) + '%' : 'N/A')}
+      `;
+
+      // Tab 4: Cash Flow
+      document.getElementById('gridCash').innerHTML = `
+        ${c('Free Cash Flow', cf.free_cash_flow ? '$' + (cf.free_cash_flow/1e9).toFixed(2) + 'B' : 'N/A')}
+        ${c('FCF Yield', cf.fcf_yield ? cf.fcf_yield.toFixed(2) + '%' : 'N/A')}
+        ${c('FCF Conversion', cf.fcf_conversion ? cf.fcf_conversion.toFixed(2) + 'x' : 'N/A')}
+        ${c('Reinvestment Ratio', cf.reinvestment_ratio ? cf.reinvestment_ratio.toFixed(1) + '%' : 'N/A')}
+      `;
+
+      // Tab 5: Valuation Multiples & Moat
+      document.getElementById('gridValuation').innerHTML = `
+        ${c('Trailing P/E', vm.trailing_pe ? vm.trailing_pe.toFixed(1) + 'x' : 'N/A')}
+        ${c('Forward P/E', vm.forward_pe ? vm.forward_pe.toFixed(1) + 'x' : 'N/A')}
+        ${c('Price-to-Sales', vm.price_to_sales ? vm.price_to_sales.toFixed(2) + 'x' : 'N/A')}
+        ${c('Price-to-Book', vm.price_to_book ? vm.price_to_book.toFixed(2) + 'x' : 'N/A')}
+        ${c('EV / EBITDA', vm.ev_to_ebitda ? vm.ev_to_ebitda.toFixed(1) + 'x' : 'N/A')}
+        ${c('PEG Ratio', vm.peg_ratio ? vm.peg_ratio.toFixed(2) + 'x' : 'N/A')}
+        ${c('ROIC', moat.roic ? moat.roic.toFixed(1) + '%' : 'N/A')}
+      `;
+
+      // Tab 6: Industry & Governance
+      document.getElementById('gridIndustry').innerHTML = `
+        ${c('Sector', ind.sector || 'N/A')}
+        ${c('Industry ETF', ind.sector_etf_ticker || 'N/A')}
+        ${c('1Y Outperformance', ind.outperformance_pct ? ind.outperformance_pct.toFixed(1) + '%' : 'N/A', ind.is_outperforming ? {cls:'badge-green', txt:'Outperforming'} : {cls:'badge-red', txt:'Underperforming'})}
+        ${c('Insider Ownership', gov.insider_ownership_pct ? gov.insider_ownership_pct.toFixed(2) + '%' : 'N/A')}
+        ${c('Institutional Own', gov.institutional_ownership_pct ? gov.institutional_ownership_pct.toFixed(1) + '%' : 'N/A')}
+        ${c('Insider Activity', gov.recent_insider_activity || 'N/A')}
+      `;
+    }
+  </script>
+</body>
+</html>
