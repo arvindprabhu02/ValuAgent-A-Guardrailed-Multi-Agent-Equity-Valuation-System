@@ -67,3 +67,30 @@ python main.py AAPL
 
 ## Architecture & Guardrails
 ValuAgent uses a sequential runner managed by the Google ADK. Each agent strictly passes its output via session state variables. The \critic_agent\ operates as a strict financial guardrail, ensuring qualitative thresholds aren't blindly ignored. The LLM is restricted to providing purely factual, backward-looking synthesis.
+
+## Deployment (Google Cloud Run)
+
+ValuAgent is fully Dockerized and optimized for Google Cloud Run's free tier. Cloud Run natively supports Docker, scales to zero when not in use, and provides a free HTTPS endpoint.
+
+### Steps to Deploy:
+1. Install the [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) and authenticate:
+   \\\ash
+   gcloud auth login
+   gcloud config set project YOUR_PROJECT_ID
+   \\\
+2. Build the Docker image via Google Cloud Build:
+   \\\ash
+   gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/valuagent
+   \\\
+3. Deploy to Cloud Run (with a 5-minute timeout to support the multi-agent pipeline):
+   \\\ash
+   gcloud run deploy valuagent \
+       --image gcr.io/YOUR_PROJECT_ID/valuagent \
+       --platform managed \
+       --region us-central1 \
+       --allow-unauthenticated \
+       --timeout 300s \
+       --memory 1Gi \
+       --set-env-vars="GROQ_API_KEY=your_actual_api_key"
+   \\\
+4. Visit the URL provided by the CLI to see your live application!
