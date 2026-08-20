@@ -300,7 +300,7 @@ def get_multi_period_price_history(ticker_symbol: str) -> dict:
         "avg_monthly_return_5y_pct": avg_monthly_return_5y,
         "rsi_14": rsi_14,
     }
-def get_ohlc_data(ticker_symbol: str, period: str = '5y') -> dict:
+def get_ohlc_data(ticker_symbol: str, period: str = '1y') -> dict:
     t = yf.Ticker(ticker_symbol)
     hist = t.history(period=period)
     if hist is None or hist.empty:

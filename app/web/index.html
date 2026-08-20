@@ -978,8 +978,10 @@
     }
 
     let ohlcData = null;
+    let currentTicker = null;
 
     function runAnalysis(ticker) {
+      currentTicker = ticker;
       document.getElementById('loadingIndicator').classList.remove('hidden');
       document.getElementById('resultsContainer').classList.add('hidden');
       document.getElementById('loadingText').innerText = `Analyzing ${ticker}...`;
@@ -1011,7 +1013,7 @@
              } else {
                ohlcData = data.ohlc_data;
                renderDashboard(data);
-               updateChart('30D');
+               renderChart(ohlcData, '30D');
                document.getElementById('resultsContainer').classList.remove('hidden');
              }
              document.getElementById('loadingIndicator').classList.add('hidden');
@@ -1029,29 +1031,26 @@
       };
     }
 
-    function updateChart(period) {
-      if (!ohlcData || !ohlcData.dates || ohlcData.dates.length === 0) return;
-      
-      document.querySelectorAll('.chart-btn').forEach(btn => btn.classList.remove('active'));
-      document.getElementById(`btn-chart-${period}`).classList.add('active');
-      
-      let days = ohlcData.dates.length;
-      if (period === '30D') days = 21; // ~21 trading days in a month
-      else if (period === '1Y') days = 252; // ~252 trading days in a year
-      
-      const sliceIdx = Math.max(0, ohlcData.dates.length - days);
-      
+    function renderChart(data, period) {
+      if (!data || !data.dates || data.dates.length === 0) return;
+
+      let days = data.dates.length;
+      if (period === '30D') days = 21;
+      else if (period === '1Y') days = 252;
+
+      const sliceIdx = Math.max(0, data.dates.length - days);
+
       const trace = {
-        x: ohlcData.dates.slice(sliceIdx),
-        open: ohlcData.opens.slice(sliceIdx),
-        high: ohlcData.highs.slice(sliceIdx),
-        low: ohlcData.lows.slice(sliceIdx),
-        close: ohlcData.closes.slice(sliceIdx),
+        x: data.dates.slice(sliceIdx),
+        open: data.opens.slice(sliceIdx),
+        high: data.highs.slice(sliceIdx),
+        low: data.lows.slice(sliceIdx),
+        close: data.closes.slice(sliceIdx),
         type: 'candlestick',
         xaxis: 'x',
         yaxis: 'y'
       };
-      
+
       const layout = {
         margin: { t: 10, b: 30, l: 40, r: 20 },
         xaxis: { rangeslider: { visible: false } },
@@ -1060,8 +1059,30 @@
         plot_bgcolor: 'rgba(0,0,0,0)',
         showlegend: false
       };
-      
+
       Plotly.newPlot('priceChart', [trace], layout, {responsive: true});
+    }
+
+    async function updateChart(period) {
+      document.querySelectorAll('.chart-btn').forEach(btn => btn.classList.remove('active'));
+      document.getElementById(`btn-chart-${period}`).classList.add('active');
+
+      if (!currentTicker) return;
+
+      // For 5Y, lazy-fetch from backend to avoid holding large data in memory
+      if (period === '5Y' || period === '1Y') {
+        document.getElementById('priceChart').innerHTML = '<p style="text-align:center; color: var(--text-muted); padding: 2rem;">Loading chart data...</p>';
+        try {
+          const res = await fetch(`/api/ohlc?ticker=${currentTicker}&period=${period.toLowerCase()}`);
+          const freshData = await res.json();
+          renderChart(freshData, period);
+        } catch (err) {
+          console.error("Failed to fetch OHLC data:", err);
+        }
+      } else {
+        // 30D uses the data already loaded during analysis
+        renderChart(ohlcData, period);
+      }
     }
 
     function renderDashboard(data) {

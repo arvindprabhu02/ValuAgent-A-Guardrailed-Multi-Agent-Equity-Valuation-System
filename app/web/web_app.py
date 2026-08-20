@@ -1,12 +1,8 @@
-"""
-FastAPI REST Service for ValuAgent.
-Serves web/index.html and endpoints for ticker valuation runs.
-"""
-
 import os
 import uuid
 import json
 import re
+import gc
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -37,6 +33,20 @@ async def serve_index():
         raise HTTPException(status_code=404, detail="index.html not found.")
     with open(index_path, "r", encoding="utf-8") as f:
         return f.read()
+
+
+@app.get("/api/ohlc")
+async def get_ohlc(ticker: str, period: str = "1y"):
+    """Lazy-load OHLC chart data for a given ticker and period."""
+    if not ticker or not ticker.strip():
+        raise HTTPException(status_code=400, detail="Ticker symbol is required.")
+    clean_ticker = ticker.strip().upper()
+    allowed_periods = {"30d": "1mo", "1y": "1y", "5y": "5y"}
+    yf_period = allowed_periods.get(period.lower(), "1y")
+    from app.tools.data_fetch import get_ohlc_data
+    data = get_ohlc_data(clean_ticker, period=yf_period)
+    gc.collect()
+    return data
 
 
 @app.get("/api/value_stream")
@@ -116,9 +126,11 @@ async def run_valuation_stream(ticker: str):
             "industry_comparison": state.get("industry_comparison"),
             "critic_flags": state.get("critic_flags", []),
             "memo_text": memo_text,
-            "events_log": events_log,
         }
         yield f"data: {json.dumps(final_data)}\n\n"
+
+        # Reclaim memory after analysis completes
+        gc.collect()
 
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 

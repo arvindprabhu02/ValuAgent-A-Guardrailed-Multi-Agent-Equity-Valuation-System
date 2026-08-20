@@ -10,87 +10,84 @@ ValuAgent is a powerful, autonomous, guardrailed multi-agent system designed for
   3. *Industry Comparison*: Benches against peers.
   4. *Risk Critic Guardrails*: Evaluates flags (e.g. debt-to-equity ratio, insider selling, SMA crossovers).
   5. *Memo Writer*: Drafts an executive summary adhering to strict factual guardrails.
-- **Facts-Only Policy**: No subjective buy/sell recommendations, DCF models, or target prices. "Here are the facts. You decide."
-- **Live Candlestick Charting**: Real-time interactive 5-year and 30-day historical stock charting using Plotly.js.
+- **Facts-Only Policy**: No subjective buy/sell recommendations, DCF models, or target prices. *Here are the facts. You decide.*
+- **Live Candlestick Charting**: Real-time interactive 30-day, 1-year, and 5-year historical stock charting using Plotly.js.
 - **Progressive Stepping UI**: Sleek Server-Sent Events (SSE) streaming updates the UI instantly as each agent completes its work.
 - **Dual-Search Mechanism**: Search easily using ticker symbols (e.g., AAPL) or company names (e.g., Apple).
 
 ## Directory Structure
 
-\\\
+```
 valuagent/
-+-- app/
-¦   +-- agents/          # ADK Agent Definitions (Data, Fundamental, Industry, Critic, Memo)
-¦   +-- tools/           # Financial API logic (yfinance integration)
-¦   +-- web/             # FastAPI backend (web_app.py) & Frontend HTML UI (index.html)
-+-- tests/               # Pytest suite
-+-- main.py              # CLI and Web App Entrypoint
-+-- README.md            
-+-- requirements.txt     
-\\\
+-- app/
+   -- agents/          # ADK Agent Definitions (Data, Fundamental, Industry, Critic, Memo)
+   -- tools/           # Financial API logic (yfinance integration)
+   -- web/             # FastAPI backend (web_app.py) and Frontend HTML UI (index.html)
+-- tests/               # Pytest suite
+-- main.py              # CLI and Web App Entrypoint
+-- Dockerfile           # Docker container configuration
+-- README.md
+-- requirements.txt
+```
 
 ## Installation
 
-\\\ash
+```bash
 # 1. Clone the repository
-git clone https://github.com/your-username/ValuAgent-A-Guardrailed-Multi-Agent-Equity-Valuation-System.git
+git clone https://github.com/arvindprabhu02/ValuAgent-A-Guardrailed-Multi-Agent-Equity-Valuation-System.git
 cd ValuAgent-A-Guardrailed-Multi-Agent-Equity-Valuation-System
 
 # 2. Create a virtual environment
 python -m venv .venv
 source .venv/Scripts/activate # Windows
-# source .venv/bin/activate   # Mac/Linux
 
 # 3. Install dependencies
 pip install -r requirements.txt
-\\\
+```
 
 ## Usage
 
 ### Run the Web UI
-Set your LLM API Key (e.g., Groq) and launch the FastAPI server:
-\\\ash
+```bash
 # Powershell
-\="your-api-key"
+$env:GROQ_API_KEY="your-api-key"
 python main.py --web
 
 # Bash
 export GROQ_API_KEY="your-api-key"
 python main.py --web
-\\\
-Visit \http://localhost:8080\ in your browser to access the ValuAgent Research Dashboard.
+```
+Visit http://localhost:8080 in your browser.
 
 ### Run via CLI
-\\\ash
+```bash
 python main.py AAPL
-\\\
+```
 
-## Architecture & Guardrails
-ValuAgent uses a sequential runner managed by the Google ADK. Each agent strictly passes its output via session state variables. The \critic_agent\ operates as a strict financial guardrail, ensuring qualitative thresholds aren't blindly ignored. The LLM is restricted to providing purely factual, backward-looking synthesis.
+## Docker
 
-## Deployment (Google Cloud Run)
+```bash
+docker build -t valuagent .
+docker run -p 8080:8080 -e GROQ_API_KEY="your-api-key" valuagent
+```
 
-ValuAgent is fully Dockerized and optimized for Google Cloud Run's free tier. Cloud Run natively supports Docker, scales to zero when not in use, and provides a free HTTPS endpoint.
+## Deployment (Koyeb - Free Tier)
+
+ValuAgent is optimized for deployment on Koyeb, which offers a generous free tier with native Docker support and no credit card required.
 
 ### Steps to Deploy:
-1. Install the [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) and authenticate:
-   \\\ash
-   gcloud auth login
-   gcloud config set project YOUR_PROJECT_ID
-   \\\
-2. Build the Docker image via Google Cloud Build:
-   \\\ash
-   gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/valuagent
-   \\\
-3. Deploy to Cloud Run (with a 5-minute timeout to support the multi-agent pipeline):
-   \\\ash
-   gcloud run deploy valuagent \
-       --image gcr.io/YOUR_PROJECT_ID/valuagent \
-       --platform managed \
-       --region us-central1 \
-       --allow-unauthenticated \
-       --timeout 300s \
-       --memory 1Gi \
-       --set-env-vars="GROQ_API_KEY=your_actual_api_key"
-   \\\
-4. Visit the URL provided by the CLI to see your live application!
+1. Create a free account at koyeb.com.
+2. Click Create Web Service then Docker then Connect your GitHub repository.
+3. Set the environment variable GROQ_API_KEY in Koyeb dashboard under Environment Variables.
+4. Koyeb auto-detects the Dockerfile, builds the image, and deploys.
+5. You will receive a free *.koyeb.app HTTPS URL for your live application!
+
+### Alternative: Google Cloud Run
+If you have a GCP billing account linked, Cloud Run provides the most powerful free-tier experience (2 GB RAM, 5-minute timeouts):
+```bash
+gcloud builds submit --tag gcr.io/YOUR_PROJECT_ID/valuagent
+gcloud run deploy valuagent --image gcr.io/YOUR_PROJECT_ID/valuagent --platform managed --region us-central1 --allow-unauthenticated --timeout 300s --memory 1Gi --set-env-vars="GROQ_API_KEY=your_actual_api_key"
+```
+
+## Architecture
+ValuAgent uses a sequential runner managed by the Google ADK. Each agent strictly passes its output via session state variables. The critic_agent operates as a strict financial guardrail. The LLM is restricted to providing purely factual, backward-looking synthesis.
