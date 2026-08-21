@@ -6,6 +6,10 @@ state keys.
 """
 
 import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from google.adk.agents import LlmAgent
 from google.adk.models import LiteLlm
 from app.agents.memo_prompt import build_memo_prompt
@@ -23,3 +27,4 @@ memo_writer_agent = LlmAgent(
     instruction=_build_instruction,
     output_key="memo_text",
 )
+

@@ -20,26 +20,16 @@ def test_data_retrieval_agent_success():
             state={"ticker": "AAPL"}
         )
 
-        mock_toolset_instance = AsyncMock()
-        
-        def make_tool_res(data):
-            res = MagicMock()
-            res.content = [MagicMock(text=data)]
-            return res
-
-        mock_toolset_instance.call_tool.side_effect = lambda tool, args: {
-            "fetch_company_profile": make_tool_res('{"ticker":"AAPL","current_price":198.5}'),
-            "fetch_cash_flow_statement": make_tool_res('{"ticker":"AAPL","operating_cash_flow_by_year":{"2024":100}}'),
-            "fetch_dividend_history": make_tool_res('{"ticker":"AAPL","has_dividends":true}'),
-            "fetch_price_history": make_tool_res('{"ticker":"AAPL","latest_close":198.5}'),
-            "fetch_balance_sheet": make_tool_res('{"ticker":"AAPL","total_assets":{"2024":500}}'),
-            "fetch_income_statement": make_tool_res('{"ticker":"AAPL","total_revenue":{"2024":1000}}'),
-            "fetch_key_statistics": make_tool_res('{"ticker":"AAPL","trailing_pe":30.0}'),
-            "fetch_insider_transactions": make_tool_res('{"ticker":"AAPL","transactions":[]}'),
-            "fetch_multi_period_price_history": make_tool_res('{"ticker":"AAPL","return_1y_pct":25.0}'),
-        }[tool]
-
-        with patch("app.agents.data_retrieval_agent.MCPToolset", return_value=mock_toolset_instance):
+        with patch("app.agents.data_retrieval_agent.get_company_profile", return_value={"ticker": "AAPL", "current_price": 198.5}), \
+             patch("app.agents.data_retrieval_agent.get_cash_flow_statement", return_value={"ticker": "AAPL"}), \
+             patch("app.agents.data_retrieval_agent.get_dividend_history", return_value={"ticker": "AAPL"}), \
+             patch("app.agents.data_retrieval_agent.get_price_history", return_value={"ticker": "AAPL"}), \
+             patch("app.agents.data_retrieval_agent.get_balance_sheet", return_value={"ticker": "AAPL"}), \
+             patch("app.agents.data_retrieval_agent.get_income_statement", return_value={"ticker": "AAPL"}), \
+             patch("app.agents.data_retrieval_agent.get_key_statistics", return_value={"ticker": "AAPL", "trailing_pe": 30.0}), \
+             patch("app.agents.data_retrieval_agent.get_insider_transactions", return_value={"ticker": "AAPL", "transactions": []}), \
+             patch("app.agents.data_retrieval_agent.get_multi_period_price_history", return_value={"ticker": "AAPL", "return_1y_pct": 25.0}), \
+             patch("app.agents.data_retrieval_agent.get_ohlc_data", return_value={"dates": [], "closes": []}):
             agent = DataRetrievalAgent()
             runner = Runner(agent=agent, session_service=session_service, app_name="agents")
             msg = Content(parts=[Part(text="Run Retrieval")])

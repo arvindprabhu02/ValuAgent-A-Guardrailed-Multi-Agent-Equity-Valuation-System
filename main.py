@@ -1,24 +1,29 @@
 """
-ValuAgent Command-Line Entry Point & Web App Launcher.
+StockLens Command-Line Entry Point & Web App Launcher.
 
 Usage:
-  python run_valuagent.py AAPL
-  python run_valuagent.py --web
+  python main.py AAPL
+  python main.py --web
 """
 
 import sys
 import os
 import asyncio
 import logging
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai.types import Content, Part
 from app.agents.orchestrator import root_agent
+from app.agents.memo_prompt import clean_memo_text
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
-logger = logging.getLogger("run_valuagent")
+logger = logging.getLogger("stocklens")
 
-APP_NAME = "valuagent"
+APP_NAME = "stocklens"
 USER_ID = "cli_user"
 
 
@@ -32,7 +37,7 @@ def _has_llm_api_key() -> bool:
 
 async def run_cli(ticker_symbol: str):
     print(f"\n==================================================")
-    print(f"       ValuAgent — Equity Research Platform       ")
+    print(f"       StockLens — Equity Research Platform       ")
     print(f"==================================================\n")
     print(f"Analyzing ticker: {ticker_symbol.upper()}...")
 
@@ -83,7 +88,11 @@ async def run_cli(ticker_symbol: str):
     print(f"       EQUITY RESEARCH SUMMARY: {ticker_symbol.upper()}       ")
     print(f"==================================================")
     print(f"Current Price:     ${pt.get('current_price', 'N/A')}")
+    print(f"3-Month Return:    {pt.get('return_3m_pct', 0.0):+.1f}%" if pt.get('return_3m_pct') is not None else "3-Month Return:    N/A")
+    print(f"6-Month Return:    {pt.get('return_6m_pct', 0.0):+.1f}%" if pt.get('return_6m_pct') is not None else "6-Month Return:    N/A")
     print(f"1-Year Return:     {pt.get('return_1y_pct', 0.0):+.1f}%" if pt.get('return_1y_pct') is not None else "1-Year Return:     N/A")
+    print(f"3-Year Return:     {pt.get('return_3y_pct', 0.0):+.1f}%" if pt.get('return_3y_pct') is not None else "3-Year Return:     N/A")
+    print(f"5-Year Return:     {pt.get('return_5y_pct', 0.0):+.1f}%" if pt.get('return_5y_pct') is not None else "5-Year Return:     N/A")
     print(f"Industry:          {ind.get('sector', 'N/A')} ({ind.get('industry', 'N/A')})")
     print(f"vs Sector ({ind.get('sector_etf_ticker', 'N/A')}):  {ind.get('outperformance_pct', 0.0):+.1f}% outperformance" if ind.get('outperformance_pct') is not None else "vs Sector:         N/A")
     print(f"--------------------------------------------------")
@@ -110,7 +119,7 @@ async def run_cli(ticker_symbol: str):
         for f in flags:
             print(f"  - [{f['severity'].upper()}] {f['check']}: {f['message']}")
 
-    memo = state.get("memo_text")
+    memo = clean_memo_text(state.get("memo_text"))
     if memo:
         print(f"\n==================================================")
         print(f"             RESEARCH MEMORANDUM                  ")
@@ -130,15 +139,15 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == "--web":
         import uvicorn
         port = int(os.environ.get("PORT", 8080))
-        print(f"Starting ValuAgent Web App on port {port}...")
+        print(f"Starting StockLens Web App on port {port}...")
         uvicorn.run("app.web.web_app:app", host="0.0.0.0", port=port, reload=False)
     elif len(sys.argv) > 1:
         ticker = sys.argv[1]
         asyncio.run(run_cli(ticker))
     else:
         print("Usage:")
-        print("  python run_valuagent.py TICKER")
-        print("  python run_valuagent.py --web")
+        print("  python main.py TICKER")
+        print("  python main.py --web")
 
 
 if __name__ == "__main__":

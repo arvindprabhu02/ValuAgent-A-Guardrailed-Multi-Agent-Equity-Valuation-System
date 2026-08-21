@@ -17,7 +17,7 @@ from app.tools.data_fetch import (
     DataFetchError,
 )
 
-mcp = FastMCP("valuagent-financial-data")
+mcp = FastMCP("stocklens-financial-data")
 
 
 @mcp.tool()

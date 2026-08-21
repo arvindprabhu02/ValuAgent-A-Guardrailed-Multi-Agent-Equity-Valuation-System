@@ -3,15 +3,23 @@ import uuid
 import json
 import re
 import gc
+import time
+import asyncio
+from typing import Dict, Tuple
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from google.adk.runners import Runner
 from google.adk.sessions import InMemorySessionService
 from google.genai.types import Content, Part
 from app.agents.orchestrator import root_agent
+from app.agents.memo_prompt import clean_memo_text
 
-app = FastAPI(title="ValuAgent — Equity Research Platform")
+app = FastAPI(title="StockLens — Equity Research Platform")
 
 app.add_middleware(
     CORSMiddleware,
@@ -22,8 +30,13 @@ app.add_middleware(
 )
 
 session_service = InMemorySessionService()
-APP_NAME = "valuagent_web"
+APP_NAME = "stocklens_web"
 USER_ID = "web_user"
+
+# In-memory caching to eliminate rate limits on cloud hosting (Render / Cloud Run)
+_ANALYSIS_CACHE: Dict[str, Tuple[float, dict]] = {}
+_OHLC_CACHE: Dict[str, Tuple[float, dict]] = {}
+_CACHE_TTL_SECONDS = 600  # 10 minutes cache per ticker
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -37,14 +50,22 @@ async def serve_index():
 
 @app.get("/api/ohlc")
 async def get_ohlc(ticker: str, period: str = "1y"):
-    """Lazy-load OHLC chart data for a given ticker and period."""
+    """Lazy-load OHLC chart data with caching to prevent rate limits."""
     if not ticker or not ticker.strip():
         raise HTTPException(status_code=400, detail="Ticker symbol is required.")
     clean_ticker = ticker.strip().upper()
+    cache_key = f"{clean_ticker}_{period.lower()}"
+    now = time.time()
+    if cache_key in _OHLC_CACHE:
+        cached_time, ohlc_res = _OHLC_CACHE[cache_key]
+        if now - cached_time < _CACHE_TTL_SECONDS:
+            return ohlc_res
+
     allowed_periods = {"30d": "1mo", "1y": "1y", "5y": "5y"}
     yf_period = allowed_periods.get(period.lower(), "1y")
     from app.tools.data_fetch import get_ohlc_data
     data = get_ohlc_data(clean_ticker, period=yf_period)
+    _OHLC_CACHE[cache_key] = (now, data)
     gc.collect()
     return data
 
@@ -58,6 +79,23 @@ async def run_valuation_stream(ticker: str):
     unique_session_id = f"session_{clean_ticker}_{uuid.uuid4().hex[:8]}"
 
     async def event_generator():
+        # Check in-memory cache first to eliminate external API rate limits
+        now = time.time()
+        if clean_ticker in _ANALYSIS_CACHE:
+            cached_time, cached_result = _ANALYSIS_CACHE[clean_ticker]
+            if now - cached_time < _CACHE_TTL_SECONDS:
+                for author in [
+                    "data_retrieval_agent",
+                    "fundamental_analysis_agent",
+                    "industry_comparison_agent",
+                    "critic_agent",
+                    "memo_writer_agent",
+                ]:
+                    yield f"data: {json.dumps({'type': 'progress', 'author': author})}\n\n"
+                    await asyncio.sleep(0.08)
+                yield f"data: {json.dumps(cached_result)}\n\n"
+                return
+
         session = await session_service.create_session(
             session_id=unique_session_id,
             app_name=APP_NAME,
@@ -109,12 +147,7 @@ async def run_valuation_stream(ticker: str):
         if not memo_text:
             memo_text = state.get("memo_text")
 
-        if memo_text:
-            memo_text = re.sub(r"<think>.*?</think>", "", memo_text, flags=re.DOTALL)
-            heading_match = re.search(r"(###|\*\*1\.|\#\#|\#\s|Executive Summary)", memo_text)
-            if heading_match and heading_match.start() > 0:
-                memo_text = memo_text[heading_match.start():]
-            memo_text = memo_text.strip()
+        memo_text = clean_memo_text(memo_text)
 
         final_data = {
             "type": "result",
@@ -127,6 +160,7 @@ async def run_valuation_stream(ticker: str):
             "critic_flags": state.get("critic_flags", []),
             "memo_text": memo_text,
         }
+        _ANALYSIS_CACHE[clean_ticker] = (time.time(), final_data)
         yield f"data: {json.dumps(final_data)}\n\n"
 
         # Reclaim memory after analysis completes
@@ -193,15 +227,7 @@ async def run_valuation(ticker: str):
     if not memo_text:
         memo_text = state.get("memo_text")
 
-    if memo_text:
-        # Strip any internal thought tags if present
-        import re
-        memo_text = re.sub(r"<think>.*?</think>", "", memo_text, flags=re.DOTALL)
-        # If output contains preamble like "Let's write...", find the first heading
-        heading_match = re.search(r"(###|\*\*1\.|\#\#|\#\s|Executive Summary)", memo_text)
-        if heading_match and heading_match.start() > 0:
-            memo_text = memo_text[heading_match.start():]
-        memo_text = memo_text.strip()
+    memo_text = clean_memo_text(memo_text)
 
     return {
         "success": True,

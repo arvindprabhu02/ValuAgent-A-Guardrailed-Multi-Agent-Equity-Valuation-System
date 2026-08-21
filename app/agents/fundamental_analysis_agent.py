@@ -179,7 +179,9 @@ class FundamentalAnalysisAgent(BaseAgent):
             "price_trend": {
                 "current_price": current_price,
                 "return_3m_pct": price_trend.get("return_3m_pct"),
+                "return_6m_pct": price_trend.get("return_6m_pct"),
                 "return_1y_pct": price_trend.get("return_1y_pct"),
+                "return_3y_pct": price_trend.get("return_3y_pct"),
                 "return_5y_pct": price_trend.get("return_5y_pct"),
                 "avg_monthly_return_1y_pct": price_trend.get("avg_monthly_return_1y_pct"),
                 "avg_monthly_return_5y_pct": price_trend.get("avg_monthly_return_5y_pct"),

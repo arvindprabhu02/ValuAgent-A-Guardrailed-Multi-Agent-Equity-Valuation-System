@@ -1,5 +1,5 @@
 """
-ValuAgent Root Orchestrator.
+StockLens Root Orchestrator.
 
 Combines all 5 pipeline agents into a SequentialAgent.
 Pipeline: DataRetrieval -> FundamentalAnalysis -> IndustryComparison -> Critic -> MemoWriter
@@ -13,7 +13,7 @@ from app.agents.critic_agent import CriticAgent
 from app.agents.memo_writer_agent import memo_writer_agent
 
 root_agent = SequentialAgent(
-    name="valuagent_orchestrator",
+    name="stocklens_orchestrator",
     sub_agents=[
         DataRetrievalAgent(),
         FundamentalAnalysisAgent(),

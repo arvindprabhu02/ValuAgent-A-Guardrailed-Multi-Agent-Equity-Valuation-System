@@ -5,18 +5,7 @@ Stage 1 Agent — Data Retrieval Agent.
 import logging
 from google.adk.agents import BaseAgent
 from google.adk.events import Event, EventActions
-from app.tools.data_fetch import (
-    get_company_profile,
-    get_cash_flow_statement,
-    get_dividend_history,
-    get_price_history,
-    get_balance_sheet,
-    get_income_statement,
-    get_key_statistics,
-    get_insider_transactions,
-    get_multi_period_price_history,
-    get_ohlc_data,
-)
+from app.tools.data_fetch import fetch_all_data
 
 logger = logging.getLogger(__name__)
 
@@ -34,31 +23,22 @@ class DataRetrievalAgent(BaseAgent):
         logger.info(f"DataRetrievalAgent running for ticker '{ticker}'...")
 
         try:
-            profile = get_company_profile(ticker)
-            cf = get_cash_flow_statement(ticker)
-            div = get_dividend_history(ticker)
-            price = get_price_history(ticker)
-            bs = get_balance_sheet(ticker)
-            inc = get_income_statement(ticker)
-            stats = get_key_statistics(ticker)
-            insider = get_insider_transactions(ticker)
-            multi_price = get_multi_period_price_history(ticker)
-            ohlc = get_ohlc_data(ticker)
+            all_data = fetch_all_data(ticker)
 
             state_delta = {
                 "financial_data": {
                     "ticker": ticker.upper(),
-                    "company_profile": profile,
-                    "cash_flow": cf,
-                    "dividend_history": div,
-                    "price_history": price,
-                    "ohlc_data": ohlc,
+                    "company_profile": all_data["company_profile"],
+                    "cash_flow": all_data["cash_flow"],
+                    "dividend_history": all_data["dividend_history"],
+                    "price_history": all_data["price_history"],
+                    "ohlc_data": all_data["ohlc_data"],
                 },
-                "balance_sheet_data": bs,
-                "income_statement_data": inc,
-                "key_statistics": stats,
-                "insider_transactions": insider.get("transactions", []),
-                "price_trend_data": multi_price,
+                "balance_sheet_data": all_data["balance_sheet_data"],
+                "income_statement_data": all_data["income_statement_data"],
+                "key_statistics": all_data["key_statistics"],
+                "insider_transactions": all_data["insider_transactions"],
+                "price_trend_data": all_data["price_trend_data"],
                 "financial_data_error": None,
             }
 

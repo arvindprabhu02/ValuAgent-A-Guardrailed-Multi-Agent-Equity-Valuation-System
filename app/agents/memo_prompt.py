@@ -48,7 +48,10 @@ FACTUAL DATA INPUTS FOR {ticker}
 1. PRICE & TECHNICAL TRENDS:
 - Current Price: ${pt.get('current_price', 'N/A')}
 - 3-Month Return: {_fmt(pt.get('return_3m_pct'), '{:+.1f}', '%')}
+- 6-Month Return: {_fmt(pt.get('return_6m_pct'), '{:+.1f}', '%')}
 - 1-Year Return: {_fmt(pt.get('return_1y_pct'), '{:+.1f}', '%')}
+- 3-Year Return: {_fmt(pt.get('return_3y_pct'), '{:+.1f}', '%')}
+- 5-Year Return: {_fmt(pt.get('return_5y_pct'), '{:+.1f}', '%')}
 - 52-Week High / Low: ${pt.get('high_52w', 'N/A')} / ${pt.get('low_52w', 'N/A')}
 - % from 52-Week High: {_fmt(pt.get('pct_from_52w_high'), '-{:.1f}', '%')}
 - SMA 50 / SMA 200: ${pt.get('sma_50', 'N/A')} / ${pt.get('sma_200', 'N/A')} (Signal: {pt.get('sma_signal', 'N/A')})
@@ -112,14 +115,65 @@ FACTUAL DATA INPUTS FOR {ticker}
 {flags_summary}
 
 --------------------------------------------------------------------------------
-MEMORANDUM STRUCTURE REQUIREMENT:
-Synthesize the data into a professional 250-350 word research memo with clear markdown headings:
+MEMORANDUM STRUCTURE & NARRATIVE STYLE REQUIREMENT:
+Synthesize all the financial data above into an institutional-grade research memorandum.
+Write each section as cohesive, flowing analytical prose paragraphs that explain the company's financial story, operational strengths, capital allocation, and risk profile. Do NOT format as dry bullet lists or raw metric dumps.
+
+Structure with these exact markdown headings:
 ### Executive Summary & Market Position
 ### Financial Health & Debt Profile
 ### Profitability, Cash Flow & Per-Share Trends
 ### Valuation & Industry Context
 ### Risk Guardrails & Observations
 
-Do NOT output conversational thoughts, reasoning tokens, or preamble. Start directly with the memo text.
+STRICT FORMATTING RULES:
+1. Write flowing narrative prose paragraphs under each heading (do NOT use bullet lists).
+2. Do NOT output conversational thoughts, reasoning tokens, scratchpad reflections, word counts, or draft revisions.
+3. Do NOT output phrases like "Word count", "Let's check", "Rough estimate", or "Now produce final answer".
+4. Output ONLY the finalized memorandum starting directly with "### Executive Summary & Market Position".
 """
     return prompt
+
+
+def clean_memo_text(memo_text: str) -> str:
+    """Robustly cleans LLM reasoning artifacts, repeated drafts, and meta-commentary."""
+    if not memo_text:
+        return ""
+        
+    import re
+    # Strip <think> tags
+    text = re.sub(r"<think>.*?</think>", "", memo_text, flags=re.DOTALL)
+    
+    # If there is a transition marker like 'Now produce final answer' or 'Final Answer:', take text after it
+    parts = re.split(r"(?:now produce final answer|final answer:?|final output:?|final memo:?)[\s\.:]*", text, flags=re.IGNORECASE)
+    if len(parts) > 1 and len(parts[-1].strip()) > 50:
+        text = parts[-1]
+            
+    # If the text has multiple occurrences of '### Executive Summary', take the last one (discard previous drafts)
+    exec_matches = list(re.finditer(r"(?:###|\*\*1\.|\#\#|\#\s)?\s*Executive Summary", text, flags=re.IGNORECASE))
+    if len(exec_matches) > 1:
+        last_idx = exec_matches[-1].start()
+        text = text[last_idx:]
+    elif exec_matches and exec_matches[0].start() > 0:
+        text = text[exec_matches[0].start():]
+
+    # Filter out individual lines that look like meta reasoning
+    clean_lines = []
+    skip_patterns = [
+        r"word count", r"rough estimate", r"check that we", r"make sure not to",
+        r"let\'s count", r"now produce", r"thinking process", r"draft \d"
+    ]
+    for line in text.split("\n"):
+        if any(re.search(pat, line, re.IGNORECASE) for pat in skip_patterns) and not line.strip().startswith("#"):
+            continue
+        clean_lines.append(line)
+        
+    text = "\n".join(clean_lines).strip()
+    
+    # Ensure it starts with heading
+    heading_match = re.search(r"(###|\*\*1\.|\#\#|\#\s|Executive Summary)", text)
+    if heading_match and heading_match.start() > 0:
+        text = text[heading_match.start():]
+        
+    return text.strip()
+

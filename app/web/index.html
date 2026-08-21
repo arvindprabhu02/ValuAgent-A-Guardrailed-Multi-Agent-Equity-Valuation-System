@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ValuAgent — Equity Research Platform</title>
+  <title>StockLens — Equity Research Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
@@ -362,11 +362,47 @@
       flex-shrink: 0;
     }
 
+    .price-row {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
     .current-price {
       font-size: 30px;
       font-weight: 800;
       font-family: 'Outfit', sans-serif;
       line-height: 1.1;
+    }
+
+    .price-change-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .price-change-badge.up {
+      background: var(--badge-green-bg);
+      color: var(--badge-green-text);
+    }
+
+    .price-change-badge.down {
+      background: var(--badge-red-bg);
+      color: var(--badge-red-text);
+    }
+
+    .price-change-badge.neutral {
+      background: #F1F5F9;
+      color: var(--text-muted);
+    }
+
+    .change-arrow {
+      font-size: 11px;
     }
 
     .price-label {
@@ -537,7 +573,7 @@
 
     /* Tabs Navigation */
     .tabs-wrapper {
-      margin-top: 16px;
+      margin-top: 20px;
     }
 
     .tabs-header {
@@ -547,14 +583,49 @@
       color: var(--text-main);
     }
 
-    .tabs-bar {
+    .tabs-nav-container {
       display: flex;
+      align-items: center;
       gap: 6px;
       border-bottom: 2px solid var(--border-color);
       padding-bottom: 2px;
+    }
+
+    .tab-scroll-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-main);
+      cursor: pointer;
+      box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+      transition: all 0.2s;
+      margin-bottom: 2px;
+    }
+
+    .tab-scroll-btn:hover {
+      background: #EEF2FF;
+      color: var(--accent-primary);
+      border-color: #C7D2FE;
+    }
+
+    .tab-scroll-btn:active {
+      transform: scale(0.92);
+    }
+
+    .tabs-bar {
+      display: flex;
+      gap: 6px;
+      flex: 1;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
+      scroll-behavior: smooth;
     }
 
     .tabs-bar::-webkit-scrollbar {
@@ -649,8 +720,15 @@
     /* Responsive Media Queries */
     @media (max-width: 900px) {
       .exec-summary-grid {
-        grid-template-columns: 1fr;
+        display: flex;
+        flex-direction: column;
         gap: 16px;
+      }
+      .highlights-card {
+        order: 1;
+      }
+      .memo-card {
+        order: 2;
       }
       #highlightsList {
         display: grid;
@@ -717,6 +795,12 @@
         display: flex;
         justify-content: space-between;
         align-items: baseline;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .price-row {
+        justify-content: flex-start;
       }
 
       .current-price {
@@ -820,9 +904,9 @@
   <header>
     <div class="container header-content">
       <div class="logo-group">
-        <div class="logo-icon">V</div>
+        <div class="logo-icon">S</div>
         <div>
-          <div class="logo-title">ValuAgent</div>
+          <div class="logo-title">StockLens</div>
           <div class="logo-subtitle">Facts-Only Equity Research</div>
         </div>
       </div>
@@ -868,8 +952,14 @@
           </div>
         </div>
         <div class="price-box">
-          <div class="current-price" id="compPrice">$0.00</div>
-          <div class="price-label">Current Market Price</div>
+          <div class="price-row">
+            <div class="current-price" id="compPrice">$0.00</div>
+            <div class="price-change-badge hidden" id="compPriceChange">
+              <span class="change-arrow" id="compChangeArrow">▲</span>
+              <span id="compChangeText">+0.00 (+0.00%)</span>
+            </div>
+          </div>
+          <div class="price-label">Current Market Price (vs Prev Close)</div>
         </div>
       </div>
 
@@ -902,13 +992,23 @@
       <!-- Interactive Metric Group Tabs -->
       <div class="tabs-wrapper">
         <div class="tabs-header">Explore Detailed Metric Groups</div>
-        <div class="tabs-bar">
-          <button class="tab-btn active" onclick="switchTab('tabPrice')">Price & Technicals</button>
-          <button class="tab-btn" onclick="switchTab('tabBalance')">Balance Sheet & Debt</button>
-          <button class="tab-btn" onclick="switchTab('tabProfit')">Profitability & Per-Share</button>
-          <button class="tab-btn" onclick="switchTab('tabCash')">Cash Flow & Capital Allocation</button>
-          <button class="tab-btn" onclick="switchTab('tabValuation')">Valuation Multiples & Moat</button>
-          <button class="tab-btn" onclick="switchTab('tabIndustry')">Industry & Governance</button>
+        <div class="tabs-nav-container">
+          <button type="button" class="tab-scroll-btn" id="prevTabScrollBtn" onclick="scrollTabs(-1)" aria-label="Scroll metric tabs left" title="Scroll left">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          </button>
+          
+          <div class="tabs-bar" id="tabsBar">
+            <button class="tab-btn active" data-tab="tabPrice" onclick="switchTab('tabPrice', this)">Price & Technicals</button>
+            <button class="tab-btn" data-tab="tabBalance" onclick="switchTab('tabBalance', this)">Balance Sheet & Debt</button>
+            <button class="tab-btn" data-tab="tabProfit" onclick="switchTab('tabProfit', this)">Profitability & Per-Share</button>
+            <button class="tab-btn" data-tab="tabCash" onclick="switchTab('tabCash', this)">Cash Flow & Capital Allocation</button>
+            <button class="tab-btn" data-tab="tabValuation" onclick="switchTab('tabValuation', this)">Valuation Multiples & Moat</button>
+            <button class="tab-btn" data-tab="tabIndustry" onclick="switchTab('tabIndustry', this)">Industry & Governance</button>
+          </div>
+
+          <button type="button" class="tab-scroll-btn" id="nextTabScrollBtn" onclick="scrollTabs(1)" aria-label="Scroll metric tabs right" title="Scroll right">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+          </button>
         </div>
 
         <!-- Tab 1: Price & Technicals -->
@@ -1184,12 +1284,28 @@
       runAnalysis(t);
     });
 
-    function switchTab(tabId) {
+    function switchTab(tabId, el) {
       document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
       document.querySelectorAll('.tab-pane').forEach(pane => pane.classList.remove('active'));
       
-      event.target.classList.add('active');
-      document.getElementById(tabId).classList.add('active');
+      const targetBtn = el || document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+      if (targetBtn) {
+        targetBtn.classList.add('active');
+        targetBtn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+
+      const targetPane = document.getElementById(tabId);
+      if (targetPane) {
+        targetPane.classList.add('active');
+      }
+    }
+
+    function scrollTabs(direction) {
+      const tabsBar = document.getElementById('tabsBar');
+      if (tabsBar) {
+        const scrollAmount = 220 * direction;
+        tabsBar.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+      }
     }
 
     let ohlcData = null;
@@ -1340,7 +1456,48 @@
       document.getElementById('compSector').innerText = p.sector || 'N/A';
       document.getElementById('compIndustry').innerText = p.industry || 'N/A';
       document.getElementById('compExchange').innerText = p.exchange || 'USD';
-      document.getElementById('compPrice').innerText = '$' + (pt.current_price || p.current_price || 0).toFixed(2);
+      
+      const currPrice = pt.current_price || p.current_price || 0;
+      document.getElementById('compPrice').innerText = '$' + currPrice.toFixed(2);
+
+      // Price Change Indicator (Screener style)
+      const changeEl = document.getElementById('compPriceChange');
+      const arrowEl = document.getElementById('compChangeArrow');
+      const changeTextEl = document.getElementById('compChangeText');
+
+      let priceChange = p.price_change;
+      let priceChangePct = p.price_change_pct;
+
+      if (priceChange === undefined || priceChange === null) {
+        const prevClose = p.previous_close;
+        if (prevClose && prevClose > 0) {
+          priceChange = currPrice - prevClose;
+          priceChangePct = (priceChange / prevClose) * 100.0;
+        }
+      }
+
+      if (priceChange !== undefined && priceChange !== null && !isNaN(priceChange)) {
+        changeEl.classList.remove('hidden', 'up', 'down', 'neutral');
+        const sign = priceChange >= 0 ? '+' : '';
+        const pctSign = (priceChangePct !== undefined && priceChangePct !== null && priceChangePct >= 0) ? '+' : '';
+        const pctStr = priceChangePct !== undefined && priceChangePct !== null ? ` (${pctSign}${priceChangePct.toFixed(2)}%)` : '';
+
+        if (priceChange > 0) {
+          changeEl.classList.add('up');
+          arrowEl.innerText = '▲';
+          changeTextEl.innerText = `${sign}$${priceChange.toFixed(2)}${pctStr}`;
+        } else if (priceChange < 0) {
+          changeEl.classList.add('down');
+          arrowEl.innerText = '▼';
+          changeTextEl.innerText = `-$${Math.abs(priceChange).toFixed(2)}${pctStr}`;
+        } else {
+          changeEl.classList.add('neutral');
+          arrowEl.innerText = '•';
+          changeTextEl.innerText = `$0.00 (0.00%)`;
+        }
+      } else {
+        changeEl.classList.add('hidden');
+      }
 
       // Memo
       const memoEl = document.getElementById('memoText');
@@ -1354,14 +1511,23 @@
         memoEl.innerHTML = '<p style="color: var(--text-muted);">No research memo generated.</p>';
       }
 
-      // Highlights Snapshot
+      // Highlights Snapshot - Rearranged in ascending duration order
       const hl = document.getElementById('highlightsList');
+      const ret3mFmt = pt.return_3m_pct !== undefined && pt.return_3m_pct !== null ? (pt.return_3m_pct >= 0 ? '+' : '') + pt.return_3m_pct.toFixed(1) + '%' : 'N/A';
+      const ret6mFmt = pt.return_6m_pct !== undefined && pt.return_6m_pct !== null ? (pt.return_6m_pct >= 0 ? '+' : '') + pt.return_6m_pct.toFixed(1) + '%' : 'N/A';
+      const ret1yFmt = pt.return_1y_pct !== undefined && pt.return_1y_pct !== null ? (pt.return_1y_pct >= 0 ? '+' : '') + pt.return_1y_pct.toFixed(1) + '%' : 'N/A';
+      const ret3yFmt = pt.return_3y_pct !== undefined && pt.return_3y_pct !== null ? (pt.return_3y_pct >= 0 ? '+' : '') + pt.return_3y_pct.toFixed(1) + '%' : 'N/A';
+      const ret5yFmt = pt.return_5y_pct !== undefined && pt.return_5y_pct !== null ? (pt.return_5y_pct >= 0 ? '+' : '') + pt.return_5y_pct.toFixed(1) + '%' : 'N/A';
+
       hl.innerHTML = `
+        <div class="metric-card"><div class="metric-label">3-Month Return</div><div class="metric-value" style="color: ${pt.return_3m_pct >= 0 ? '#166534' : '#991B1B'}">${ret3mFmt}</div></div>
+        <div class="metric-card"><div class="metric-label">6-Month Return</div><div class="metric-value" style="color: ${pt.return_6m_pct >= 0 ? '#166534' : '#991B1B'}">${ret6mFmt}</div></div>
+        <div class="metric-card"><div class="metric-label">1-Year Return</div><div class="metric-value" style="color: ${pt.return_1y_pct >= 0 ? '#166534' : '#991B1B'}">${ret1yFmt}</div></div>
+        <div class="metric-card"><div class="metric-label">3-Year Return</div><div class="metric-value" style="color: ${pt.return_3y_pct >= 0 ? '#166534' : '#991B1B'}">${ret3yFmt}</div></div>
+        <div class="metric-card"><div class="metric-label">5-Year Return</div><div class="metric-value" style="color: ${pt.return_5y_pct >= 0 ? '#166534' : '#991B1B'}">${ret5yFmt}</div></div>
         <div class="metric-card"><div class="metric-label">P/E Ratio</div><div class="metric-value">${vm.trailing_pe ? vm.trailing_pe.toFixed(1) : (vm.forward_pe ? vm.forward_pe.toFixed(1) : 'N/A')}</div></div>
         <div class="metric-card"><div class="metric-label">ROIC</div><div class="metric-value">${moat.roic ? moat.roic.toFixed(1) + '%' : 'N/A'}</div></div>
         <div class="metric-card"><div class="metric-label">ROCE</div><div class="metric-value">${moat.roce ? moat.roce.toFixed(1) + '%' : 'N/A'}</div></div>
-        <div class="metric-card"><div class="metric-label">Avg M. Return (1Y)</div><div class="metric-value">${pt.avg_monthly_return_1y_pct !== undefined && pt.avg_monthly_return_1y_pct !== null ? pt.avg_monthly_return_1y_pct.toFixed(2) + '%' : 'N/A'}</div></div>
-        <div class="metric-card"><div class="metric-label">Avg M. Return (5Y)</div><div class="metric-value">${pt.avg_monthly_return_5y_pct !== undefined && pt.avg_monthly_return_5y_pct !== null ? pt.avg_monthly_return_5y_pct.toFixed(2) + '%' : 'N/A'}</div></div>
         <div class="metric-card"><div class="metric-label">FCF Yield</div><div class="metric-value">${cf.fcf_yield ? cf.fcf_yield.toFixed(2) + '%' : 'N/A'}</div></div>
       `;
 
@@ -1376,12 +1542,26 @@
         `;
       }
 
+      function fmtRet(val) {
+        if (val === null || val === undefined) return { val: 'N/A', badge: null };
+        const txt = (val >= 0 ? '+' : '') + val.toFixed(1) + '%';
+        const badge = val >= 0 ? { cls: 'badge-green', txt: 'Positive' } : { cls: 'badge-red', txt: 'Negative' };
+        return { val: txt, badge };
+      }
+
+      const r3m = fmtRet(pt.return_3m_pct);
+      const r6m = fmtRet(pt.return_6m_pct);
+      const r1y = fmtRet(pt.return_1y_pct);
+      const r3y = fmtRet(pt.return_3y_pct);
+      const r5y = fmtRet(pt.return_5y_pct);
+
       // Tab 1: Price & Technicals
       document.getElementById('gridPrice').innerHTML = `
-        ${c('3-Month Return', pt.return_3m_pct ? pt.return_3m_pct.toFixed(1) + '%' : 'N/A')}
-        ${c('1-Year Return', pt.return_1y_pct ? pt.return_1y_pct.toFixed(1) + '%' : 'N/A')}
         ${c('52-W High', '$' + (pt.high_52w || 0).toFixed(2))}
         ${c('52-W Low', '$' + (pt.low_52w || 0).toFixed(2))}
+        ${c('% from 52W High', pt.pct_from_52w_high ? '-' + pt.pct_from_52w_high.toFixed(1) + '%' : 'N/A')}
+        ${c('50-Day SMA', pt.sma_50 ? '$' + pt.sma_50.toFixed(2) : 'N/A')}
+        ${c('200-Day SMA', pt.sma_200 ? '$' + pt.sma_200.toFixed(2) : 'N/A')}
         ${c('SMA Signal', pt.sma_signal || 'N/A', pt.sma_signal === 'BULLISH' ? {cls:'badge-green', txt:'Bullish'} : {cls:'badge-red', txt:'Bearish'})}
         ${c('RSI (14-Day)', pt.rsi_14 ? pt.rsi_14.toFixed(1) : 'N/A')}
         ${c('Beta', pt.beta ? pt.beta.toFixed(2) : 'N/A')}
