@@ -59,10 +59,28 @@ def fetch_all_data(ticker_symbol: str) -> dict:
     t = yf.Ticker(clean)
 
     # ------- Access each yfinance property exactly ONCE -------
-    info = t.info or {}
+    try:
+        info = t.info or {}
+    except Exception as e:
+        logger.warning(f"Yahoo Finance rate limit or error: {e}. Attempting fallback...")
+        info = {}
+
     if not info or (info.get("regularMarketPrice") is None and info.get("currentPrice") is None):
+        # FALLBACK: Try to load from mock_data.json for default tickers
+        try:
+            import json, os
+            mock_path = os.path.join(os.path.dirname(__file__), "mock_data.json")
+            if os.path.exists(mock_path):
+                with open(mock_path, "r") as f:
+                    mock_data = json.load(f)
+                    if clean in mock_data:
+                        logger.info(f"Using fallback mock data for {clean}")
+                        return mock_data[clean]
+        except Exception as mock_e:
+            logger.error(f"Fallback failed: {mock_e}")
+
         raise DataFetchError(
-            f"No usable market data found for ticker '{clean}'. "
+            f"No usable market data found for ticker '{clean}' (or rate limited). "
             f"It may be delisted, mistyped, or unsupported by the data provider."
         )
 
@@ -346,18 +364,29 @@ def get_ohlc_data(ticker_symbol: str, period: str = '1y') -> dict:
         if time.time() - cached_time < _CACHE_TTL_SECONDS:
             return cached.get("ohlc_data", {})
 
-    t = yf.Ticker(clean)
-    hist = t.history(period=period)
-    if hist is None or hist.empty:
+    try:
+        t = yf.Ticker(clean)
+        hist = t.history(period=period)
+        if hist is None or hist.empty:
+            raise ValueError("Empty history")
+        return {
+            'dates': [str(d.date()) for d in hist.index],
+            'opens': hist['Open'].tolist(),
+            'highs': hist['High'].tolist(),
+            'lows': hist['Low'].tolist(),
+            'closes': hist['Close'].tolist(),
+            'volumes': hist['Volume'].tolist(),
+        }
+    except Exception:
+        # Fallback
+        import os, json
+        mock_path = os.path.join(os.path.dirname(__file__), "mock_data.json")
+        if os.path.exists(mock_path):
+            with open(mock_path, "r") as f:
+                mock_data = json.load(f)
+                if clean in mock_data and "ohlc_data" in mock_data[clean]:
+                    return mock_data[clean]["ohlc_data"]
         return {}
-    return {
-        'dates': [str(d.date()) for d in hist.index],
-        'opens': hist['Open'].tolist(),
-        'highs': hist['High'].tolist(),
-        'lows': hist['Low'].tolist(),
-        'closes': hist['Close'].tolist(),
-        'volumes': hist['Volume'].tolist(),
-    }
 
 
 # ---------------------------------------------------------------------------

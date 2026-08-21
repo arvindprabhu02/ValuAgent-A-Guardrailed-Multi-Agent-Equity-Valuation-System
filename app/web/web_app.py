@@ -127,6 +127,12 @@ async def run_valuation_stream(ticker: str):
 
                 events_log.append({"author": author, "text": extracted_text or str(event)})
                 
+                # Check for critical data fetching errors to abort early
+                if session.state.get("financial_data_error"):
+                    err_msg = session.state["financial_data_error"]
+                    yield f"data: {json.dumps({'type': 'error', 'error': err_msg})}\n\n"
+                    return
+
                 # Yield progress event
                 yield f"data: {json.dumps({'type': 'progress', 'author': author})}\n\n"
         except Exception as e:
@@ -208,6 +214,10 @@ async def run_valuation(ticker: str):
                 memo_text = extracted_text
 
             events_log.append({"author": author, "text": extracted_text or str(event)})
+            
+            # Abort early on critical error
+            if session.state.get("financial_data_error"):
+                break
     except Exception as e:
         events_log.append({"author": "system", "text": f"Execution error: {str(e)}"})
 
